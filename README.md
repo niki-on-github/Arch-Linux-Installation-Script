@@ -1,6 +1,6 @@
-# Arch Linux, SSD (NVME), UEFI, LUKS, BTRFS Installation Script
+# Arch Linux - SSD (NVME), UEFI, LUKS, BTRFS
 
-This is not a universal installation script. It is my arch linux installation script. I make it public available because other public repositories helped me a lot when I switched to Arch Linux. I hope this repository helps you too. If you want to install an Arch Linux more than once a month I recommend to create a personal installation script like this one.
+**This is not a universal installation script**. It is my arch linux installation script. I make it public available because other public repositories helped me a lot when I switched to Arch Linux. I hope this repository helps you too. If you want to install an Arch Linux more than once a month I recommend to create a personal installation script like this one.
 
 The script is for a UEFI installation with fully encrypted hard disk (LUKS) including boot on a SSD (NVME). Also boot is on the same btrfs subvolume to allow a very easy rollback. I have experimented a lot with this in the past. This solution seems to be the best solution available. The only drawback is that no remote unlock (SSH) on boot is possible for the encrypted system. (In such a case boot would have to be unencrypted, which destroys the advantage of the simple rollback)
 
