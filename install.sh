@@ -12,11 +12,11 @@ LOCALTIME="/usr/share/zoneinfo/Europe/Berlin"
 INSTALL_PATH="/mnt/install"
 PARTLABEL_BOOT="boot"
 PARTLABEL_ROOT="root"
-CRYPT_DEV_LABEL="secure"
+CRYPT_DEV_LABEL="system"
 HOSTNAME="archlinux"
 US_KEYBOARD_FOR_ENCRYPTION=0
 CREATE_INSTALL_LOG=0
-SSH_SERVER=1
+SSH_SERVER=0
 
 
 ##########################################################################################################
@@ -26,6 +26,7 @@ SSH_SERVER=1
 # NOTE: set paths without the first slash!
 BTRFS_SYS_SUBVOLUME="@root"
 BTRFS_SYS_SNAPSHOTS_SUBVOLUME="@snapshots"
+BTRFS_VAR_LOG_SUBVOLUME="@log"
 BTRFS_SWAP_SUBVOLUME="@swap"
 BTRFS_HOME_SUBVOLUME="@home"
 
@@ -44,7 +45,7 @@ NC='\033[0m'  # No Color
 # Package
 ##########################################################################################################
 
-packages=( curl git neovim openssh wget )
+packages=( curl git vim openssh wget )
 
 
 ##########################################################################################################
@@ -72,7 +73,7 @@ get_uuid() {
 partition_drive() {
    local device="$1"; shift
    echo -e "\n${LBLUE} >> Partition Drive ${NC}"
-   
+
    echo -n "All data on $device will be deleted, continue? (Y/n) : " && read delete && delete=${delete:-Yes}
    [ $delete != "Yes" ] && [ $delete != "yes" ] && [ $delete != "Y" ] && [ $delete != "y" ] && exit 1
 
@@ -81,10 +82,10 @@ partition_drive() {
    done
 
    wipefs --force --quiet --all $device >/dev/null 2>&1
-   
+
    parted --script $device mklabel gpt
    parted --script $device mkpart primary 1MiB 512MiB name 1 $PARTLABEL_BOOT
-   parted --script $device set 1 boot on 
+   parted --script $device set 1 boot on
    parted --script $device mkpart primary 512MiB 100% name 2 $PARTLABEL_ROOT
 }
 
@@ -92,14 +93,16 @@ enrypt_drive() {
    local crypt_dev="$1"; shift
    echo -e "\n${LBLUE} >> Encrypt Drive ${NC}"
 
-   if [ "$US_KEYBOARD_FOR_ENCRYPTION" != "0" ]; then
-      echo -e "[INFO] keyboard layout for password changed to us"
-      echo -e "[INFO] do not use # key on german keyboard"
-	  loadkeys us
-   else 
-      echo -e "Important note: In boot menu the keyboard layout could be us"
+   if [ "$KEYMAP" != "us" ]; then
+      if [ "$US_KEYBOARD_FOR_ENCRYPTION" != "0" ]; then
+         echo -e "[INFO] keyboard layout for password changed to us"
+         echo -e "[INFO] do not use # key on german keyboard"
+         loadkeys us
+      else
+         echo -e "Important note: In boot menu the keyboard layout could be us"
+      fi
    fi
-   
+
    while true; do
       echo -en "\nEnter passphrase for drive: " && read -s drive_passphrase
       echo -en "\nVerify passphrase for drive: " && read -s drive_passphrase_verify
@@ -113,29 +116,29 @@ enrypt_drive() {
    loadkeys $KEYMAP  # switch back
 
    # NOTE: The iteration count parameter are determined via benchmark upon key slot creation or update via `--iter-time`
-   # parameter (default 2000 milliseconds). Unlocking from GRUB under tighter memory constraints doesn’t take advantage 
-   # of all crypto-related CPU instructions. That means unlocking a LUKS device from GRUB might take a lot longer than 
-   # doing it from the normal system. Since GRUB’s LUKS implementation isn’t able to benchmark, you’ll need to determine 
-   # the iteration count parameter manually via `luksChangeKey --pbkdf-force-iterations`. Wenn you change it you have to 
-   # make sure that the key stores in keyslot 0 to get the speed advantage. In most cases the key has to be changed 2 
+   # parameter (default 2000 milliseconds). Unlocking from GRUB under tighter memory constraints doesn’t take advantage
+   # of all crypto-related CPU instructions. That means unlocking a LUKS device from GRUB might take a lot longer than
+   # doing it from the normal system. Since GRUB’s LUKS implementation isn’t able to benchmark, you’ll need to determine
+   # the iteration count parameter manually via `luksChangeKey --pbkdf-force-iterations`. Wenn you change it you have to
+   # make sure that the key stores in keyslot 0 to get the speed advantage. In most cases the key has to be changed 2
    # times to update keyslot 0.
-   # NOTE: Halving the iteration count would speed up unlocking by a factor of two but making low entropy passphrases 
+   # NOTE: Halving the iteration count would speed up unlocking by a factor of two but making low entropy passphrases
    # twice as easy to brute-force!
-   # EXAMPLE: 
+   # EXAMPLE:
    # ```
-   # # change keyslot 0 key (add new key to next free key slot and remove keyslot 0)
+   # # 1. change key (add new tmp key to next free key slot and remove keyslot 0)
    # cryptsetup luksChangeKey --pbkdf-force-iterations 500000 /dev/nvme0n1p2
-   # # show used key slot’s
+   # # 2. show used key slots
    # cryptsetup luksDump /dev/nvme0n1p2
-   # # change key slot n key (add new key to free keyslot 0 and remove key from key slot n)
+   # # 3. change key (add new key to now free keyslot 0 and remove tmp key from key slot n)
    # cryptsetup luksChangeKey --pbkdf-force-iterations 500000 /dev/nvme0n1p2
    # ```
    # SEE: https://cryptsetup-team.pages.debian.net/cryptsetup/encrypted-boot.html
-   echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 -s 512 -h sha512 ${crypt_dev}
+   echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 --pbkdf-force-iterations 500000 -s 512 -h sha512 ${crypt_dev}
    echo -en "$drive_passphrase" | cryptsetup open --type luks1 ${crypt_dev} $CRYPT_DEV_LABEL
 }
 
-# NOTE: internal btrfs helper function 
+# NOTE: internal btrfs helper function
 create_btrfs_subvolume_recursive() {
    local btrfs_path="$1"; shift
 
@@ -156,7 +159,7 @@ setup_filesystem() {
    local boot_dev="$1"; shift
    local root_dev="$1"; shift
    echo -e "\n${LBLUE} >> Setup Filesystem ${NC}"
-   
+
    mkfs.vfat -F32 $boot_dev
    mkfs.btrfs -f -L "Arch Linux" $root_dev
 
@@ -166,10 +169,11 @@ setup_filesystem() {
    #NOTE: subvolumes inside subvolumes are excluded from snapshots
    create_btrfs_subvolume_recursive "$BTRFS_SYS_SUBVOLUME"
    create_btrfs_subvolume_recursive "$BTRFS_SYS_SNAPSHOTS_SUBVOLUME"
+   create_btrfs_subvolume_recursive "$BTRFS_VAR_LOG_SUBVOLUME"
    create_btrfs_subvolume_recursive "$BTRFS_SWAP_SUBVOLUME"
    create_btrfs_subvolume_recursive "$BTRFS_HOME_SUBVOLUME"
 
-   #NOTE: It is not possible to mount some subvolumes with 'nodatacow' and others with 'datacow'. 
+   #NOTE: It is not possible to mount some subvolumes with 'nodatacow' and others with 'datacow'.
    # The mount option of the first mounted subvolume applies to any other subvolumes.
    # To disable copy-on-write for EMPTY directories do 'chattr +C /path'
    mkdir -p ${INSTALL_PATH}
@@ -177,28 +181,32 @@ setup_filesystem() {
 
    mkdir -p ${INSTALL_PATH}/.snapshots
    mount -t btrfs -o defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_SYS_SNAPSHOTS_SUBVOLUME} $root_dev ${INSTALL_PATH}/.snapshots
-   
+
+   mkdir -p ${INSTALL_PATH}/var/log
+   mount -t btrfs -o defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_VAR_LOG_SUBVOLUME} $root_dev ${INSTALL_PATH}/var/log
+
    mkdir -p ${INSTALL_PATH}/swap
    mount -t btrfs -o defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_SWAP_SUBVOLUME} $root_dev ${INSTALL_PATH}/swap
-   
+
    mkdir -p ${INSTALL_PATH}/home
    mount -t btrfs -o defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_HOME_SUBVOLUME} $root_dev ${INSTALL_PATH}/home
 
    mkdir -p ${INSTALL_PATH}/boot/efi
    mount -t vfat $boot_dev ${INSTALL_PATH}/boot/efi
-   
+
    # create fstab
    mkdir -p ${INSTALL_PATH}/etc
    echo -e "# <uuid>  <path>  <fs>  <options>  <0>  <order>" > ${INSTALL_PATH}/etc/fstab
 
-   local btrfs_dev_uuid=$(get_uuid "$root_dev") 
+   local btrfs_dev_uuid=$(get_uuid "$root_dev")
    echo -e "UUID=${btrfs_dev_uuid} / btrfs defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_SYS_SUBVOLUME} 0 0" >> ${INSTALL_PATH}/etc/fstab
+   echo -e "UUID=${btrfs_dev_uuid} /var/log btrfs defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_VAR_LOG_SUBVOLUME} 0 2" >> ${INSTALL_PATH}/etc/fstab
    echo -e "UUID=${btrfs_dev_uuid} /home btrfs defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_HOME_SUBVOLUME} 0 2" >> ${INSTALL_PATH}/etc/fstab
-   echo -e "UUID=${btrfs_dev_uuid} /.snapshots btrfs defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_SYS_SNAPSHOTS_SUBVOLUME} 0 3" >> ${INSTALL_PATH}/etc/fstab
-   echo -e "UUID=${btrfs_dev_uuid} /swap btrfs defaults,ssd,noatime,subvol=${BTRFS_SWAP_SUBVOLUME} 0 4" >> ${INSTALL_PATH}/etc/fstab
+   echo -e "UUID=${btrfs_dev_uuid} /.snapshots btrfs defaults,ssd,noatime,compress=lzo,subvol=${BTRFS_SYS_SNAPSHOTS_SUBVOLUME} 0 2" >> ${INSTALL_PATH}/etc/fstab
+   echo -e "UUID=${btrfs_dev_uuid} /swap btrfs defaults,ssd,noatime,subvol=${BTRFS_SWAP_SUBVOLUME} 0 2" >> ${INSTALL_PATH}/etc/fstab
 
-   local boot_dev_uuid=$(get_uuid "$boot_dev") 
-   echo -e "UUID=${boot_dev_uuid} /boot/efi vfat defaults 0 5" >> ${INSTALL_PATH}/etc/fstab
+   local boot_dev_uuid=$(get_uuid "$boot_dev")
+   echo -e "UUID=${boot_dev_uuid} /boot/efi vfat defaults 0 2" >> ${INSTALL_PATH}/etc/fstab
 }
 
 update_mirrorlist() {
@@ -220,28 +228,31 @@ install_system() {
 	  base_packages+=( amd-ucode )
    fi
 
-   pacstrap ${INSTALL_PATH} ${base_packages[@]}
+   pacman-key --populate
+   pacman --noconfirm -Syy archlinux-keyring
+   pacman-key --refresh-keys
 
-   sed -i 's/block filesystems keyboard/block keyboard keymap encrypt btrfs filesystems/g' ${INSTALL_PATH}/etc/mkinitcpio.conf 
+   pacstrap ${INSTALL_PATH} ${base_packages[@]}
+   sed -i 's/block filesystems keyboard/block keyboard keymap encrypt btrfs filesystems/g' ${INSTALL_PATH}/etc/mkinitcpio.conf
 }
 
 run_chroot_script() {
    local crypt_dev="$1"; shift
    local log="$1"; shift
    echo -e "\n${LBLUE} >> Run Chroot Script ${NC}"
-   
-   local crypt_dev_uuid=$(get_uuid "${crypt_dev}") 
+
+   local crypt_dev_uuid=$(get_uuid "${crypt_dev}")
 
    cp $0 ${INSTALL_PATH}/setup.sh
    chmod +x ${INSTALL_PATH}/setup.sh
-   
+
    if [ "$log" != "0" ]; then
       arch-chroot ${INSTALL_PATH} ./setup.sh chroot "$crypt_dev_uuid" 2>&1 | tee install.log
 	  echo -ne "\n${GREEN}Press Enter to view install log ${NC} " && read any && unset any && nano --view install.log
    else
       arch-chroot ${INSTALL_PATH} ./setup.sh chroot "$crypt_dev_uuid"
    fi
-   
+
    [ -f ${INSTALL_PATH}/setup.sh ] && echo -e "${RED}[ERROR] installation failed! ${NC}" && exit 1
 }
 
@@ -283,7 +294,7 @@ create_user() {
 
    useradd -g users -G wheel,audio,video -m -s /bin/bash $username
    sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
-   echo -e "${username}:${user_passphrase}" | chpasswd 
+   echo -e "${username}:${user_passphrase}" | chpasswd
    echo -e "root:${user_passphrase}" | chpasswd
 }
 
@@ -301,10 +312,11 @@ removeTmpSudoInstallPermission() {
 update_system() {
    echo -e "\n${LBLUE} >> Update System ${NC}"
    sed -i "s/^#Color/Color/" /etc/pacman.conf
-   reflector --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+   pacman-key --populate
+   pacman --noconfirm -Syy archlinux-keyring
    pacman-key --refresh-keys
-   pacman --noconfirm -Sy archlinux-keyring
-   pacman -Syyu
+   reflector --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+   pacman --noconfirm -Syyu
 }
 
 network_settings() {
@@ -337,12 +349,12 @@ install_aur_tools() {
 
 install_graphic_card_driver() {
    echo -e "\n${LBLUE} >> Graphic card detection ${NC}"
-   
+
    if lspci -v | grep "VGA" -A 12 | grep -q "Intel" >/dev/null 2>&1; then
       echo -e "Install open-source Intel driver."
       pacman --noconfirm --needed -S mesa xf86-video-intel
    fi
-   
+
    if lspci -v | grep "VGA" -A 12 | grep -q "NVIDIA" >/dev/null 2>&1; then
       echo -e "A NVIDIA GeForce card was detected."
       echo -n "Would you like to install the proprietary driver ? (y/N) : " && read nvidia_driver && nvidia_driver=${nvidia_driver:-No}
@@ -355,7 +367,7 @@ install_graphic_card_driver() {
       fi
       unset nvidia_driver
    fi
-   
+
    if lspci -v | grep "VGA" -A 12 | grep -q -E "(Radeon|AMD)" >/dev/null 2>&1; then
       echo -e "Install open-source amdgpu driver"
       pacman --noconfirm --needed -S mesa xf86-video-amdgpu opencl-mesa opencl-headers libclc
@@ -364,7 +376,7 @@ install_graphic_card_driver() {
 
 setup_btrfs_swapfile() {
    echo -e "\n${LBLUE} >> BTRFS Swapfile ${NC}"
-   
+
    chattr +C /swap
    truncate -s 0 /swap/swapfile
    chattr +C /swap/swapfile
@@ -374,7 +386,7 @@ setup_btrfs_swapfile() {
    mkswap /swap/swapfile
    swapon /swap/swapfile
    free -h
-   echo "/swap/swapfile none swap defaults 0 6" >> /etc/fstab
+   echo "/swap/swapfile none swap defaults 0 3" >> /etc/fstab
 }
 
 setup_ssh_server() {
@@ -400,33 +412,24 @@ install_bootloader_grub() {
    dd bs=512 count=8 if=/dev/urandom of=/crypto_keyfile.bin
    echo -e "Add keyfile to luks encrypted partition"
 
-   if [ "$US_KEYBOARD_FOR_ENCRYPTION" != "0" ]; then
-      echo -e "[INFO] keyboard layout changed to us for drive passphrase input"
-      loadkeys us
+   if [ "$KEYMAP" != "us" ]; then
+      if [ "$US_KEYBOARD_FOR_ENCRYPTION" != "0" ]; then
+         echo -e "[INFO] keyboard layout changed to us for drive passphrase input"
+         loadkeys us
+      fi
    fi
 
    cryptsetup luksAddKey /dev/disk/by-uuid/${device_uuid} /crypto_keyfile.bin
    loadkeys $KEYMAP  # switch back
 
    chmod 000 /crypto_keyfile.bin
-
-   if grep -q "MODULES=()" /etc/mkinitcpio.conf >/dev/null 2>&1; then
-      sed -i 's/^MODULES=()/MODULES=( crc32c )/g' /etc/mkinitcpio.conf
-   else
-      sed -i 's/^MODULES=(/MODULES=( crc32c/g' /etc/mkinitcpio.conf
-   fi
-
-   if grep -q "FILES=()" /etc/mkinitcpio.conf >/dev/null 2>&1; then
-      sed -i 's/^FILES=()/FILES=( \/crypto_keyfile.bin )/g' /etc/mkinitcpio.conf
-   else
-      sed -i 's/^FILES=(/FILES=( \/crypto_keyfile.bin/g' /etc/mkinitcpio.conf
-   fi
+   sed -i 's/^MODULES=(/MODULES=( crc32c /g' /etc/mkinitcpio.conf
+   sed -i 's/^FILES=(/FILES=( \/crypto_keyfile.bin /g' /etc/mkinitcpio.conf
 
    pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
-   echo " " >> /etc/default/grub
-   echo "# Enable booting from LUKS encrypted devices" >> /etc/default/grub
-   echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
-   sed -i 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="cryptdevice=UUID='$device_uuid':'${CRYPT_DEV_LABEL}'"/' /etc/default/grub
+   sed -i 's/#GRUB_ENABLE_CRYPTODISK=.*$/GRUB_ENABLE_CRYPTODISK=y/' /etc/default/grub
+   sed -i 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="cryptdevice=UUID='$device_uuid':'${CRYPT_DEV_LABEL}' rootflags=subvol='${BTRFS_SYS_SUBVOLUME}'"/' /etc/default/grub
+   sed -i 's/loglevel=3 quiet/loglevel=3/g' /etc/default/grub
 
    if lscpu -J | grep -q "Intel" >/dev/null 2>&1; then
       echo -e "Intel CPU was detected -> add intel_iommu=on"
@@ -435,14 +438,12 @@ install_bootloader_grub() {
       echo -e "AMD CPU was detected -> add amd_iommu=on"
       sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="amd_iommu=on /g' /etc/default/grub
    fi
-   
-   sed -i 's/loglevel=3 quiet/loglevel=3/g' /etc/default/grub
-   
+
    systemctl enable grub-btrfs.path
    mkinitcpio -P
    grub-install --efi-directory=/boot/efi --bootloader-id=arch
    grub-mkconfig -o /boot/grub/grub.cfg
-   
+
    # grub de language fix:
    if [ "$LOCALE" = "de_DE.UTF-8" ]; then
       if [ -f /usr/share/locale/de/LC_MESSAGES/grub.mo ]; then
@@ -456,22 +457,51 @@ install_bootloader_grub() {
 virtualbox_fix() {
    local username="$1"; shift
    echo -e "\n${LBLUE} >> VirtualBox Fix${NC}"
-   
+
    # fix host: vm freeze caused by btrfs
    sudo -u $username mkdir -p "/home/$username/VirtualBox VMs"
    sudo -u $username chattr +C "/home/$username/VirtualBox VMs"
    sudo -u $username btrfs property set "/home/$username/VirtualBox VMs" compression none
-   
+
    # fix guest: grub
    [ -f /boot/efi/EFI/arch/grubx64.efi ] && \
       echo "\EFI\arch\grubx64.efi" > /boot/efi/startup.nsh
+}
+
+setup_snapper() {
+   [ -d /.snapshots ] || return # continue only if we have a common btrfs structure
+   [ -f /etc/snapper/configs/root ] && return
+   echo -e "\n${LBLUE} >> Setup Snapper${NC}"
+   pacman --noconfirm --needed -S snapper snap-pac
+
+   #NOTE: snapper required a not existing /.snapshots directory for setup!
+   umount /.snapshots
+   rm -r /.snapshots
+
+   # Disable dbus in chroot
+   snapper --no-dbus -c root create-config /
+   btrfs quota enable /
+
+   # config path: /etc/snapper/configs/root
+   snapper --no-dbus -c root set-config "TIMELINE_CREATE=no"
+   snapper --no-dbus -c root set-config "NUMBER_CLEANUP=yes"
+   snapper --no-dbus -c root set-config "NUMBER_MIN_AGE=0"
+   snapper --no-dbus -c root set-config "NUMBER_LIMIT=30"
+   snapper --no-dbus -c root set-config "NUMBER_LIMIT_IMPORTANT=10"
+
+   systemctl enable snapper-cleanup.timer
+
+   #NOTE: we delete the snapshots directory from snapper and use our own btrfs subvolume
+   btrfs sub delete /.snapshots
+   mkdir /.snapshots
+   mount -a # mount .snapshots from fstab
 }
 
 create_btrfs_snapshot() {
    echo -e "\n${LBLUE} >> Create btrfs snapshot ${NC}"
    local snapshot_name=$(date +%Y-%m-%d)
    btrfs subvolume snapshot / /.snapshots/$snapshot_name # we create a rw snapshot (use -r for read-only)
-   
+
    # update gub file if we use grub as bootloader
    [ -f /boot/grub/grub.cfg ] && \
       grub-mkconfig -o /boot/grub/grub.cfg
@@ -494,16 +524,16 @@ init() {
    else
       device="/dev/$device"
    fi
-   
+
    partition_drive "$device"
-   
+
    local crypt_dev="/dev/disk/by-partlabel/$PARTLABEL_ROOT"
-   
+
    enrypt_drive "$crypt_dev"
 
    local boot_dev="/dev/disk/by-partlabel/$PARTLABEL_BOOT"
    local root_dev="/dev/mapper/$CRYPT_DEV_LABEL"
-   
+
    setup_filesystem "$boot_dev" "$root_dev"
    update_mirrorlist
    install_system
@@ -518,7 +548,7 @@ init() {
 chroot() {
    local crypt_dev_uuid="$1"; shift
    local root_dev="/dev/mapper/$CRYPT_DEV_LABEL"
-   
+
    print_logo
 
    setting_timezone
@@ -526,26 +556,27 @@ chroot() {
 
    echo -e "\n${LBLUE} >> User Settings ${NC}"
    echo -ne "Add new user : " && read username && username=${username:-arch}
-   
+
    create_user "$username"
    addTmpSudoInstallPermission
 
    update_system
    network_settings
-   
+
    install_common_packages "$username"
    install_aur_tools "$username"
    install_graphic_card_driver
-   
+
    if [ "$SSH_SERVER" != "0" ]; then
       setup_ssh_server "$username"
    fi
-   
+
    setup_btrfs_swapfile
    install_bootloader_grub "$crypt_dev_uuid"
    virtualbox_fix "$username"
-   
+
    removeTmpSudoInstallPermission
+   setup_snapper
    create_btrfs_snapshot
    rm /setup.sh
    exit 0
