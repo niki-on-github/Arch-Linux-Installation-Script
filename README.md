@@ -21,14 +21,14 @@ Additional step which is necessary if the first RW recovery system snapshot is n
 
 ```bash
 lsblk
-cryptsetup open --type luks1 /dev/disk/by-partlabel/root secure
+cryptsetup open --type luks1 /dev/disk/by-partlabel/root system
 ```
 
 Restore system:
 
 ```bash
 mkdir -p /mnt/btrfs-root
-mount -t btrfs /dev/mapper/secure /mnt/btrfs-root
+mount -t btrfs /dev/mapper/system /mnt/btrfs-root
 rm -rf /mnt/btrfs-root/@root/*
 btrfs subvolume delete /mnt/btrfs-root/@root
 btrfs subvolume snapshot /mnt/btrfs-root/@snapshots/$SNAPSHOT/snapshot /mnt/btrfs-root/@root
