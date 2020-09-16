@@ -1,4 +1,5 @@
 #!/bin/bash
+# vim:ft=sh:ts=3:sts=3:sw=3:et:
 
 ##########################################################################################################
 # SYSTEM GLOBAL CONFIGURATION
@@ -7,16 +8,20 @@
 LOCALE="de_DE.UTF-8"
 MIRROR="Germany"
 LANG="de_DE.UTF-8"
-KEYMAP="de-latin1"
+KEYMAP="de-latin1"  # see: ls /usr/share/kbd/keymaps/**/*.map.gz | sed 's/.map.gz$//g'
 LOCALTIME="/usr/share/zoneinfo/Europe/Berlin"
 INSTALL_PATH="/mnt/install"
 PARTLABEL_BOOT="boot"
 PARTLABEL_ROOT="root"
+LABEL_ARCH="arch"
 CRYPT_DEV_LABEL="system"
 HOSTNAME="archlinux"
-US_KEYBOARD_FOR_ENCRYPTION=0
-CREATE_INSTALL_LOG=0
-SSH_SERVER=0
+USERNAME="arch"  # create a user with this name
+US_KEYBOARD_FOR_ENCRYPTION=0  # if != 0: change at the luks passphrase input to the us keyboard layout (NOTE: grub use us keyboard layout at hard disk unlock)
+CREATE_INSTALL_LOG=0  # if != 0: log chroot command results (intended for debugging only)
+SSH_SERVER=0  # if != 0: install and activate an SSH server for the $USERNAME
+KEYSERVER="pool.sks-keyservers.net"  # In August 2020 almost no keyserver was accessible via hkps. Workaround set keyserver manually.
+LUKS_PBKDF_ITERATIONS=500000  # Halving the iteration count speed up unlocking by a factor of two but making low entropy passphrases twice as easy to brute-force!
 
 
 ##########################################################################################################
@@ -24,7 +29,7 @@ SSH_SERVER=0
 ##########################################################################################################
 
 # NOTE: set paths without the first slash!
-BTRFS_SYS_SUBVOLUME="@root"
+BTRFS_SYS_SUBVOLUME="@"
 BTRFS_SYS_SNAPSHOTS_SUBVOLUME="@snapshots"
 BTRFS_VAR_LOG_SUBVOLUME="@log"
 BTRFS_SWAP_SUBVOLUME="@swap"
@@ -67,7 +72,7 @@ print_logo() {
 }
 
 get_uuid() {
-    blkid -o export "$1" | grep "UUID" | grep -v "PARTUUID" | grep -v "UUID_SUB" | awk -F= '{print $2}'
+   blkid -o export "$1" | grep "UUID" | grep -v "PARTUUID" | grep -v "UUID_SUB" | awk -F= '{print $2}'
 }
 
 partition_drive() {
@@ -122,9 +127,9 @@ enrypt_drive() {
    # the iteration count parameter manually via `luksChangeKey --pbkdf-force-iterations`. Wenn you change it you have to
    # make sure that the key stores in keyslot 0 to get the speed advantage. In most cases the key has to be changed 2
    # times to update keyslot 0.
-   # NOTE: Halving the iteration count would speed up unlocking by a factor of two but making low entropy passphrases
-   # twice as easy to brute-force!
-   # EXAMPLE:
+   # Halving the iteration count would speed up unlocking by a factor of two but making low entropy passphrases twice as
+   # easy to brute-force!
+   # HOW: Change iteration count parameter:
    # ```
    # # 1. change key (add new tmp key to next free key slot and remove keyslot 0)
    # cryptsetup luksChangeKey --pbkdf-force-iterations 500000 /dev/nvme0n1p2
@@ -134,7 +139,13 @@ enrypt_drive() {
    # cryptsetup luksChangeKey --pbkdf-force-iterations 500000 /dev/nvme0n1p2
    # ```
    # SEE: https://cryptsetup-team.pages.debian.net/cryptsetup/encrypted-boot.html
-   echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 --pbkdf-force-iterations 500000 -s 512 -h sha512 ${crypt_dev}
+   if [ "$LUKS_PBKDF_ITERATIONS" -le "100000" ]; then
+      echo "[LUKS] manual pbkdf iteration is disabled, determine automatically"
+      echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 -s 512 -h sha512 ${crypt_dev}
+   else
+      echo "[LUKS] use $LUKS_PBKDF_ITERATIONS pbkdf iterations"
+      echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 --pbkdf-force-iterations $LUKS_PBKDF_ITERATIONS -s 512 -h sha512 ${crypt_dev}
+   fi
    echo -en "$drive_passphrase" | cryptsetup open --type luks1 ${crypt_dev} $CRYPT_DEV_LABEL
 }
 
@@ -161,7 +172,7 @@ setup_filesystem() {
    echo -e "\n${LBLUE} >> Setup Filesystem ${NC}"
 
    mkfs.vfat -F32 $boot_dev
-   mkfs.btrfs -f -L "Arch Linux" $root_dev
+   mkfs.btrfs -f -L $LABEL_ARCH $root_dev
 
    mkdir -p /mnt/btrfs-root
    mount -t btrfs -o defaults,ssd,noatime,compress=lzo $root_dev /mnt/btrfs-root
@@ -219,18 +230,17 @@ install_system() {
    echo -e "\n${LBLUE} >> Install System ${NC}"
    timedatectl set-ntp true
 
-   base_packages=( base base-devel linux linux-firmware linux-headers btrfs-progs reflector nano sudo xdg-user-dirs nvme-cli )
+   base_packages=( base base-devel linux linux-firmware linux-headers btrfs-progs reflector vi nano sudo xdg-user-dirs nvme-cli )
    if lscpu -J | grep -q "Intel" >/dev/null; then
       echo -e "Intel CPU was detected -> install intel-ucode"
-	  base_packages+=( intel-ucode )
+      base_packages+=( intel-ucode )
    elif lscpu -J | grep -q "AMD" >/dev/null; then
       echo -e "AMD CPU was detected -> install amd-ucode"
-	  base_packages+=( amd-ucode )
+      base_packages+=( amd-ucode )
    fi
 
-   pacman-key --populate
+   pacman-key --populate archlinux
    pacman --noconfirm -Syy archlinux-keyring
-   pacman-key --refresh-keys
 
    pacstrap ${INSTALL_PATH} ${base_packages[@]}
    sed -i 's/block filesystems keyboard/block keyboard keymap encrypt btrfs filesystems/g' ${INSTALL_PATH}/etc/mkinitcpio.conf
@@ -248,7 +258,7 @@ run_chroot_script() {
 
    if [ "$log" != "0" ]; then
       arch-chroot ${INSTALL_PATH} ./setup.sh chroot "$crypt_dev_uuid" 2>&1 | tee install.log
-	  echo -ne "\n${GREEN}Press Enter to view install log ${NC} " && read any && unset any && nano --view install.log
+      echo -ne "\n${GREEN}Press Enter to view install log ${NC} " && read any && unset any && nano --view install.log
    else
       arch-chroot ${INSTALL_PATH} ./setup.sh chroot "$crypt_dev_uuid"
    fi
@@ -312,16 +322,27 @@ removeTmpSudoInstallPermission() {
 update_system() {
    echo -e "\n${LBLUE} >> Update System ${NC}"
    sed -i "s/^#Color/Color/" /etc/pacman.conf
-   pacman-key --populate
+   pacman-key --populate archlinux
    pacman --noconfirm -Syy archlinux-keyring
+
+   if grep "^keyserver " /etc/pacman.d/gnupg/gpg.conf >/dev/null 2>&1 ; then
+      sed -i 's/^keyserver .*$/keyserver '$(echo "$KEYSERVER" | sed 's/\//\\\//g')'/g' /etc/pacman.d/gnupg/gpg.conf
+   else
+      mkdir -p /etc/pacman.d/gnupg
+      echo "keyserver $KEYSERVER" >> /etc/pacman.d/gnupg/gpg.conf
+   fi
+
    pacman-key --refresh-keys
    reflector --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
-   pacman --noconfirm -Syyu
+   pacman --noconfirm -Syu
 }
 
 network_settings() {
    echo -e "\n${LBLUE} >> Setting up Network ${NC}"
    echo "$HOSTNAME" > /etc/hostname
+   echo "127.0.0.1 localhost" >> /etc/hosts
+   echo "::1 localhost" >> /etc/hosts
+   echo "127.0.0.1 $HOSTNAME.local $HOSTNAME" >> /etc/hosts
    pacman --noconfirm --needed -S networkmanager net-tools
    systemctl enable NetworkManager.service
 }
@@ -337,14 +358,20 @@ install_common_packages() {
 install_aur_tools() {
    local username="$1"; shift
    echo -e "\n${LBLUE} >> Install AUR tools ${NC}"
+
+   [ -d /home/$username/.gnupg ] || sudo -u $username mkdir -p /home/$username/.gnupg
+   sudo -u $username chmod 700 /home/$username/.gnupg
+   if grep "^keyserver " /home/$username/.gnupg >/dev/null 2>&1 ; then
+      sudo -u $username sed -i 's/^keyserver .*$/keyserver '$(echo "$KEYSERVER" | sed 's/\//\\\//g')'/g' /home/$username/.gnupg/gpg.conf
+   else
+      echo "keyserver $KEYSERVER" | sudo -u $username tee -a /home/$username/.gnupg/gpg.conf
+   fi
+   sudo -u $username chmod 600 /home/$username/.gnupg/gpg.conf
+
    pacman --noconfirm --needed -S cmake git go
-   local working_directory=$pwd
-   cd /tmp #NOTE: for /opt the user has no authorization
-   sudo -u $username git clone https://aur.archlinux.org/yay.git yay
-   cd yay
-   sudo -u $username makepkg --noconfirm -si
-   cd $working_directory
-   sudo -u $username yay -Syu
+   sudo -u $username git clone https://aur.archlinux.org/yay.git /tmp/yay
+   cd /tmp/yay && sudo -u $username makepkg --noconfirm -si && cd -
+   sudo -u $username yay --noconfirm -Syu
 }
 
 install_graphic_card_driver() {
@@ -362,7 +389,7 @@ install_graphic_card_driver() {
          echo -e "Install proprietary NVIDIA driver."
          pacman --noconfirm --needed -S nvidia nvidia-utils
       else
-      	 echo -e "Install open-source NVIDIA driver."
+         echo -e "Install open-source NVIDIA driver."
          pacman --noconfirm --needed -S xf86-video-nouveau
       fi
       unset nvidia_driver
@@ -376,7 +403,6 @@ install_graphic_card_driver() {
 
 setup_btrfs_swapfile() {
    echo -e "\n${LBLUE} >> BTRFS Swapfile ${NC}"
-
    chattr +C /swap
    truncate -s 0 /swap/swapfile
    chattr +C /swap/swapfile
@@ -385,7 +411,6 @@ setup_btrfs_swapfile() {
    chmod 0600 /swap/swapfile
    mkswap /swap/swapfile
    swapon /swap/swapfile
-   free -h
    echo "/swap/swapfile none swap defaults 0 3" >> /etc/fstab
 }
 
@@ -419,7 +444,11 @@ install_bootloader_grub() {
       fi
    fi
 
-   cryptsetup luksAddKey /dev/disk/by-uuid/${device_uuid} /crypto_keyfile.bin
+   cryptsetupReturnValue=1
+   while [ "$cryptsetupReturnValue" -ne "0" ]; do
+      cryptsetup luksAddKey /dev/disk/by-uuid/${device_uuid} /crypto_keyfile.bin
+      cryptsetupReturnValue=$?
+   done
    loadkeys $KEYMAP  # switch back
 
    chmod 000 /crypto_keyfile.bin
@@ -447,9 +476,8 @@ install_bootloader_grub() {
    # grub de language fix:
    if [ "$LOCALE" = "de_DE.UTF-8" ]; then
       if [ -f /usr/share/locale/de/LC_MESSAGES/grub.mo ]; then
-         echo -e "Copy /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo"
          mkdir -p /boot/grub/locale
-         cp /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo
+         cp -v /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo
       fi
    fi
 }
@@ -486,8 +514,8 @@ setup_snapper() {
    snapper --no-dbus -c root set-config "TIMELINE_CREATE=no"
    snapper --no-dbus -c root set-config "NUMBER_CLEANUP=yes"
    snapper --no-dbus -c root set-config "NUMBER_MIN_AGE=0"
-   snapper --no-dbus -c root set-config "NUMBER_LIMIT=30"
-   snapper --no-dbus -c root set-config "NUMBER_LIMIT_IMPORTANT=10"
+   snapper --no-dbus -c root set-config "NUMBER_LIMIT=25"
+   snapper --no-dbus -c root set-config "NUMBER_LIMIT_IMPORTANT=5"
 
    systemctl enable snapper-cleanup.timer
 
@@ -497,9 +525,38 @@ setup_snapper() {
    mount -a # mount .snapshots from fstab
 }
 
+create_btrfs_recover_script() {
+echo -e "\n${LBLUE} >> Create BTRFS Recover Script${NC}"
+pacman -S --needed --noconfirm fzf  # install recover script dependencies
+cat > /usr/bin/btrfs-system-recover <<EOF
+#!/bin/bash
+set -e
+check() {
+   [ "\$?" -eq "0" ] || echo "Error: Recovery failed"
+   [ -d /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/boot ] || echo "Warning: System is not bootable anymore"
+}
+trap check SIGHUP SIGINT SIGTERM EXIT
+if [ ! -d /tmp/btrfs-recover ]; then
+   mkdir -p /tmp/btrfs-recover
+   mount -t btrfs -o subvolid=0 /dev/mapper/$CRYPT_DEV_LABEL /tmp/btrfs-recover
+fi
+recover=\$(find /tmp/btrfs-recover/$BTRFS_SYS_SNAPSHOTS_SUBVOLUME -maxdepth 2 -name "info.xml" | fzf --preview 'cat {}' | sed 's/\/info.xml$//g') || exit 1
+[ -z "\$recover" ] && exit 1
+[ ! -d \$recover/snapshot ] && echo "[ERROR] SnapshotNotFound: \$recover/snapshot" && exit 1
+rm -rf /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/{*,.*} >/dev/null || echo "clear bad btrfs system root"
+btrfs subvolume set-default /tmp/btrfs-recover
+[ ! -e /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME ] || btrfs subvolume delete /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME
+btrfs subvolume snapshot \$recover/snapshot /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME
+rm -f /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/var/lib/pacman/db.lck
+echo "recovery successful"
+EOF
+chmod +x /usr/bin/btrfs-system-recover
+echo "/usr/bin/btrfs-system-recover created"
+}
+
 create_btrfs_snapshot() {
    echo -e "\n${LBLUE} >> Create btrfs snapshot ${NC}"
-   local snapshot_name=$(date +%Y-%m-%d)
+   local snapshot_name="System_Recovery_$(date +%Y_%m_%d)"
    btrfs subvolume snapshot / /.snapshots/$snapshot_name # we create a rw snapshot (use -r for read-only)
 
    # update gub file if we use grub as bootloader
@@ -514,9 +571,10 @@ create_btrfs_snapshot() {
 
 init() {
    print_logo
+   timedatectl set-ntp true
 
    lsblk
-   echo -ne "Set device name : " && read device
+   echo -ne "Set device name (e.g. nvme0n1) : " && read device
    [ -z "$device" ] && exit 1
    if [ ! -e /dev/$device ]; then
       echo -e "${RED}[ERROR] Device not found! ${NC}"
@@ -555,7 +613,8 @@ chroot() {
    setting_up_locale
 
    echo -e "\n${LBLUE} >> User Settings ${NC}"
-   echo -ne "Add new user : " && read username && username=${username:-arch}
+   # echo -ne "Add new user : " && read username && username=${username:-arch}
+   username="$USERNAME"
 
    create_user "$username"
    addTmpSudoInstallPermission
@@ -577,6 +636,7 @@ chroot() {
 
    removeTmpSudoInstallPermission
    setup_snapper
+   create_btrfs_recover_script
    create_btrfs_snapshot
    rm /setup.sh
    exit 0
