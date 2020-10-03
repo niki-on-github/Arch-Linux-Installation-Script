@@ -72,7 +72,7 @@ print_logo() {
 }
 
 get_uuid() {
-   blkid -o export "$1" | grep "UUID" | grep -v "PARTUUID" | grep -v "UUID_SUB" | awk -F= '{print $2}'
+   blkid $1 -s UUID -o value
 }
 
 partition_drive() {
@@ -82,16 +82,22 @@ partition_drive() {
    echo -n "All data on $device will be deleted, continue? (Y/n) : " && read delete && delete=${delete:-Yes}
    [ $delete != "Yes" ] && [ $delete != "yes" ] && [ $delete != "Y" ] && [ $delete != "y" ] && exit 1
 
+   # if installation failed we need to remove the broken setup first
+   if [ -e /dev/mapper/$CRYPT_DEV_LABEL ]; then
+      umount -A -v /dev/mapper/$CRYPT_DEV_LABEL
+      cryptsetup luksClose $CRYPT_DEV_LABEL
+   fi
+
    for s in $(ls ${device}*); do
-      echo -e "umount $s" && umount $s
+      echo -e "umount $s" && umount -f $s
    done
 
    wipefs --force --quiet --all $device >/dev/null 2>&1
 
    parted --script $device mklabel gpt
-   parted --script $device mkpart primary 1MiB 512MiB name 1 $PARTLABEL_BOOT
+   parted --script $device mkpart primary 1MiB 256MiB name 1 $PARTLABEL_BOOT
    parted --script $device set 1 boot on
-   parted --script $device mkpart primary 512MiB 100% name 2 $PARTLABEL_ROOT
+   parted --script $device mkpart primary 256MiB 100% name 2 $PARTLABEL_ROOT
 }
 
 enrypt_drive() {
@@ -482,6 +488,42 @@ install_bootloader_grub() {
    fi
 }
 
+install_memtest86() {
+   local username="$1"; shift
+   command -v yay >/dev/null || return
+   echo -e "\n${LBLUE} >> Install Memtest86 ${NC}"
+   sudo -u $username yay --noconfirm -S memtest86-efi
+
+   MEMTEST86_PATH="/usr/share/memtest86-efi"
+   [ ! -d $MEMTEST86_PATH ] && echo -e "${RED}MemTest86 install failed (DirectoryNotFound: $MEMTEST86_PATH) ${NC}" && return
+
+	mkdir -pv "/boot/efi/EFI/memtest86"
+   cd $MEMTEST86_PATH && find . -type f -not -iname '*.efi' -exec cp '{}' '/boot/efi/EFI/memtest86/{}' ';' && cd -
+	cp -v "$MEMTEST86_PATH/bootx64.efi" "/boot/efi/EFI/memtest86/memtestx64.efi"
+
+   local boot_uuid=$(get_uuid "/dev/disk/by-partlabel/$PARTLABEL_BOOT")
+   cat > "/etc/grub.d/86_memtest" <<FOE
+#!/bin/sh
+
+cat <<EOF
+menuentry "Memtest86" {
+   search --set=root --no-floppy --fs-uuid $boot_uuid
+   chainloader /EFI/memtest86/memtestx64.efi
+}
+EOF
+FOE
+	chmod 755 "/etc/grub.d/86_memtest"
+   grub-mkconfig -o "/boot/grub/grub.cfg"
+
+   if [ -f /etc/memtest86-efi/memtest86-efi.conf ]; then
+      echo "Writting configuration (for updates) ..."
+      sed -i "s|@PARTITION@|/dev/disk/by-partlabel/$PARTLABEL_BOOT|g" /etc/memtest86-efi/memtest86-efi.conf
+      sed -i "s|@ESP@|/boot/efi|g" /etc/memtest86-efi/memtest86-efi.conf
+      sed -i "s|@CHOICE@|3|g" /etc/memtest86-efi/memtest86-efi.conf
+      sed -i "s|install=0|install=1|g" /etc/memtest86-efi/memtest86-efi.conf
+   fi
+}
+
 virtualbox_fix() {
    local username="$1"; shift
    echo -e "\n${LBLUE} >> VirtualBox Fix${NC}"
@@ -494,6 +536,8 @@ virtualbox_fix() {
    # fix guest: grub
    [ -f /boot/efi/EFI/arch/grubx64.efi ] && \
       echo "\EFI\arch\grubx64.efi" > /boot/efi/startup.nsh
+
+   echo "ok"
 }
 
 setup_snapper() {
@@ -526,9 +570,9 @@ setup_snapper() {
 }
 
 create_btrfs_recover_script() {
-echo -e "\n${LBLUE} >> Create BTRFS Recover Script${NC}"
-pacman -S --needed --noconfirm fzf  # install recover script dependencies
-cat > /usr/bin/btrfs-system-recover <<EOF
+   echo -e "\n${LBLUE} >> Create BTRFS Recover Script${NC}"
+   pacman -S --needed --noconfirm fzf  # install recover script dependencies
+   cat > /usr/bin/btrfs-system-recover <<EOF
 #!/bin/bash
 set -e
 check() {
@@ -543,15 +587,15 @@ fi
 recover=\$(find /tmp/btrfs-recover/$BTRFS_SYS_SNAPSHOTS_SUBVOLUME -maxdepth 2 -name "info.xml" | fzf --preview 'cat {}' | sed 's/\/info.xml$//g') || exit 1
 [ -z "\$recover" ] && exit 1
 [ ! -d \$recover/snapshot ] && echo "[ERROR] SnapshotNotFound: \$recover/snapshot" && exit 1
-rm -rf /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/{*,.*} >/dev/null || echo "clear bad btrfs system root"
+rm -rf /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/{*,.*} >/dev/null || echo "clear bad btrfs system root"  # return always true
 btrfs subvolume set-default /tmp/btrfs-recover
 [ ! -e /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME ] || btrfs subvolume delete /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME
 btrfs subvolume snapshot \$recover/snapshot /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME
 rm -f /tmp/btrfs-recover/$BTRFS_SYS_SUBVOLUME/var/lib/pacman/db.lck
 echo "recovery successful"
 EOF
-chmod +x /usr/bin/btrfs-system-recover
-echo "/usr/bin/btrfs-system-recover created"
+   chmod +x /usr/bin/btrfs-system-recover
+   echo "/usr/bin/btrfs-system-recover created"
 }
 
 create_btrfs_snapshot() {
@@ -632,6 +676,7 @@ chroot() {
 
    setup_btrfs_swapfile
    install_bootloader_grub "$crypt_dev_uuid"
+   install_memtest86 "$username"
    virtualbox_fix "$username"
 
    removeTmpSudoInstallPermission
