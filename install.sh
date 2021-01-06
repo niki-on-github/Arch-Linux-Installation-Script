@@ -80,14 +80,14 @@ trap 'rcode=$?; previous_command=$this_command; this_command=$BASH_COMMAND; \
 print_logo() {
     clear
     echo -e '\e[H\e[2J'
-    echo -e '            \e[0;36m.'
-    echo -e '           \e[0;36m/ \'
-    echo -e '         \e[0;36m/   \     \e[1;37m                      #   \e[1;36m| *'
-    echo -e '        \e[0;36m/^.    \       \e[1;37m a##e #%" a#"e 6##%  \e[1;36m| | |-^-. |    | \ /'
-    echo -e '       \e[0;36m/  .-.  \       \e[1;37m.oOo# # #     #  #  \e[1;36m| | |   | | |   X'
-    echo -e '     \e[0;36m/  (   ) _\   \e[1;37m%OoO# # %#e" #  #  \e[1;36m| | |    | ^._.| / \ \e[0;37mTM'
+    echo -e '          \e[0;36m.'
+    echo -e '         \e[0;36m/ \'
+    echo -e '        \e[0;36m/   \      \e[1;37m               #     \e[1;36m| *'
+    echo -e '       \e[0;36m/^.   \     \e[1;37m a##e #%" a#"e 6##%  \e[1;36m| | |-^-. |   | \ /'
+    echo -e '      \e[0;36m/  .-.  \    \e[1;37m.oOo# #   #    #  #  \e[1;36m| | |   | |   |  X'
+    echo -e '     \e[0;36m/  (   ) _\   \e[1;37m%OoO# #   %#e" #  #  \e[1;36m| | |   | ^._.| / \ \e[0;37mTM'
     echo -e '    \e[1;36m/ _.~   ~._^\'
-    echo -e '   \e[1;36m/.^           ^.\ \e[0;37mTM'
+    echo -e '   \e[1;36m/.^         ^.\ \e[0;37mTM'
     echo -e " "
 }
 
