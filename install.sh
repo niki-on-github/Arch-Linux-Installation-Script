@@ -16,7 +16,7 @@ LABEL_ARCH="arch"
 CRYPT_DEV_LABEL="system"
 HOSTNAME="archlinux"
 USERNAME="arch"
-HARDENED_KERNEL=1
+HARDENED=1
 PROPRIETARY_VIDEO_DRIVER=0
 SSH_SERVER=0
 LUKS_PBKDF_ITERATIONS=500000
@@ -36,7 +36,7 @@ KEYSERVER="pool.sks-keyservers.net"
 # Package
 ##########################################################################################################
 
-packages=( curl git vim openssh wget )
+PACKAGES=( curl vim openssh wget )
 
 
 ##########################################################################################################
@@ -70,7 +70,9 @@ set -o functrace
 trap 'rcode=$?; previous_command=$this_command; this_command=$BASH_COMMAND; \
     previous_line=$this_line; this_line=$LINENO; \
     echo "${previous_line}: ${previous_command} (error code $rcode)" | grep -v " 0)$" | \
-    grep -v "^${previous_line}: [ ]*\[" | grep "^${previous_line}: ">> "$LOGFILE"' DEBUG
+    grep -v "^${previous_line}: [ ]*\[" | grep "^${previous_line}: " | \
+    grep -v "^${previous_line}: [ ]*cat " | grep -v "^${previous_line}: [ ]*print_logo " \
+    >> "$LOGFILE"' DEBUG
 
 
 ##########################################################################################################
@@ -89,6 +91,19 @@ print_logo() {
     echo -e '    \e[1;36m/ _.~   ~._^\'
     echo -e '   \e[1;36m/.^         ^.\ \e[0;37mTM'
     echo -e " "
+    return 0
+}
+
+check_efi() {
+    [ ! -e /sys/firmware/efi/efivars ] && echo "${RED}[ERROR] Not booted via UEFI, installation is not possible! ${NC}" && exit 1
+    return 0
+}
+
+print_config() {
+    echo -e "\n${LBLUE} >> Config ${NC}"
+    head -n 55 $0 | grep -v "^#" | grep -v "^$"
+    echo -e "\n"
+    return 0
 }
 
 get_uuid() {
@@ -96,6 +111,7 @@ get_uuid() {
 }
 
 select_device() {
+    echo -e "\n${LBLUE} >> Select Install Device ${NC}"
     lsblk
     echo -ne "Set device name (e.g. nvme0n1) : " && read device
     [ -z "$device" ] && exit 1
@@ -106,6 +122,7 @@ select_device() {
         device="/dev/$device"
     fi
     _DEVICE="$device"
+    return 0
 }
 
 partition_drive() {
@@ -122,9 +139,11 @@ partition_drive() {
         cryptsetup luksClose $CRYPT_DEV_LABEL
     fi
 
-    for s in $(ls ${device}*); do
-        echo -e "umount $s" && umount -f $s
-    done
+    if [ "$(ls ${device}* | wc -l)" -gt "1" ]; then
+        for s in $(ls ${device}*); do
+            echo -e "umount $s" && umount -f $s
+        done
+    fi
 
     wipefs --force --quiet --all $device >/dev/null 2>&1
 
@@ -132,6 +151,7 @@ partition_drive() {
     parted --script $device mkpart primary 1MiB 256MiB name 1 $PARTLABEL_BOOT
     parted --script $device set 1 boot on
     parted --script $device mkpart primary 256MiB 100% name 2 $PARTLABEL_ROOT
+    return 0
 }
 
 enrypt_drive() {
@@ -167,6 +187,7 @@ enrypt_drive() {
         echo -en "$drive_passphrase" | cryptsetup luksFormat --type luks1 --pbkdf-force-iterations $LUKS_PBKDF_ITERATIONS -s 512 -h sha512 ${crypt_dev}
     fi
     echo -en "$drive_passphrase" | cryptsetup open --type luks1 ${crypt_dev} $CRYPT_DEV_LABEL
+    return 0
 }
 
 create_btrfs_subvolume_recursive() {
@@ -238,6 +259,7 @@ setup_filesystem() {
 
     boot_dev_uuid=$(get_uuid "$boot_dev")
     echo -e "UUID=${boot_dev_uuid} /boot/efi vfat defaults 0 2" >> ${INSTALL_PATH}/etc/fstab
+    return 0
 }
 
 user_password() {
@@ -254,12 +276,14 @@ user_password() {
         fi
     done
     _USER_PASSWORD="$user_passphrase"
+    return 0
 }
 
 update_mirrorlist() {
     echo -e "\n${LBLUE} >> Update Mirrorlist ${NC}"
-    pacman --noconfirm -Sy reflector
-    reflector --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+    pacman --noconfirm --needed -Sy reflector
+    reflector --download-timeout 10 --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+    return 0
 }
 
 install_system() {
@@ -268,7 +292,7 @@ install_system() {
 
     base_packages=( base base-devel linux-firmware btrfs-progs reflector vi nano sudo xdg-user-dirs nvme-cli rsync )
 
-    if [ $HARDENED_KERNEL != 0 ]; then
+    if [ $HARDENED != 0 ]; then
         echo -e "Install hardened Linux Kernel"
         base_packages+=( linux-hardened linux-hardened-headers )
     else
@@ -288,6 +312,7 @@ install_system() {
 
     pacstrap ${INSTALL_PATH} ${base_packages[@]}
     sed -i 's/block filesystems keyboard/block keyboard keymap encrypt btrfs filesystems/g' ${INSTALL_PATH}/etc/mkinitcpio.conf
+    return 0
 }
 
 run_chroot_script() {
@@ -301,15 +326,18 @@ run_chroot_script() {
     cp $0 ${INSTALL_PATH}/setup.sh
     chmod +x ${INSTALL_PATH}/setup.sh
 
+    echo "run setup.sh in arch-chroot"
     arch-chroot ${INSTALL_PATH} ./setup.sh chroot "$crypt_dev_uuid" "$drive_passphrase" "$user_password"
 
     [ -f ${INSTALL_PATH}${LOGFILE} ] && cat ${INSTALL_PATH}${LOGFILE} >> ${LOGFILE} && rm ${INSTALL_PATH}${LOGFILE}
     [ -f ${INSTALL_PATH}/setup.sh ] && echo -e "${RED}[ERROR] Installation failed! ${NC}" && exit 1
+    return 0
 }
 
 view_install_log() {
     [ ! -f $LOGFILE ] && return
     echo -ne "\n${GREEN}Press Enter to view install log ${NC} " && read any && unset any && nano --view $LOGFILE
+    return 0
 }
 
 
@@ -318,47 +346,50 @@ view_install_log() {
 ##########################################################################################################
 
 setting_timezone() {
-    echo -e "\n${LBLUE} >> Setting Timezone ${NC}"
+    echo -e "\n${LBLUE} >> Setting Timezone (chroot) ${NC}"
     rm -f /etc/localtime
     ln -sf $LOCALTIME /etc/localtime
     timedatectl set-ntp true
     hwclock --systohc --utc
     echo "done"
+    return 0
 }
 
 setting_up_locale() {
-    echo -e "\n${LBLUE} >> Setting up Locale ${NC}"
+    echo -e "\n${LBLUE} >> Setting up Locale (chroot) ${NC}"
     sed -i 's/#'"$LOCALE"' UTF-8/'"$LOCALE"' UTF-8/g' /etc/locale.gen
     locale-gen
     echo "LANG=$LANG" > /etc/locale.conf
     export LANG=$LANG
     echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
     echo "done"
+    return 0
 }
 
 create_user() {
     user_passphrase="$1"; shift
-    echo -e "\n${LBLUE} >> Create User ${NC}"
+    echo -e "\n${LBLUE} >> Create User (chroot) ${NC}"
     useradd -g users -G wheel,audio,video -m -s /bin/bash $USERNAME
     sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
     echo -e "${USERNAME}:${user_passphrase}" | chpasswd
     echo -e "root:${user_passphrase}" | chpasswd
     echo "done"
+    return 0
 }
 
 addInstallPermission() {
     # Allow user to run sudo without password (required for AUR programs that must be installed in a fakeroot environment)
-    grep -q "^%wheel ALL=(ALL) NOPASSWD: ALL" /etc/sudoers && return
-    grep -q "^%wheel ALL=(ALL) ALL" /etc/sudoers && sed -i 's/^%wheel ALL=(ALL) ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers && return
-    echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    return 0
 }
 
 removeInstallPermission() {
-    sed -i 's/^%wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+    sed -i '$ d' /etc/sudoers # remove last entry
+    return 0
 }
 
 update_system() {
-    echo -e "\n${LBLUE} >> Update System ${NC}"
+    echo -e "\n${LBLUE} >> Update System (chroot) ${NC}"
     sed -i "s/^#Color/Color/" /etc/pacman.conf
     pacman-key --populate archlinux
     pacman --noconfirm -Syy archlinux-keyring
@@ -373,29 +404,34 @@ update_system() {
     fi
 
     pacman-key --refresh-keys
-    reflector --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+    reflector --download-timeout 10 --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
     pacman --noconfirm -Syu
+    return 0
 }
 
 network_settings() {
-    echo -e "\n${LBLUE} >> Setting up Network ${NC}"
+    echo -e "\n${LBLUE} >> Setting up Network (chroot) ${NC}"
     echo "$HOSTNAME" > /etc/hostname
     echo "127.0.0.1 localhost" >> /etc/hosts
     echo "::1 localhost" >> /etc/hosts
     echo "127.0.0.1 $HOSTNAME.local $HOSTNAME" >> /etc/hosts
     pacman --noconfirm --needed -S networkmanager net-tools
     systemctl enable NetworkManager.service
+    return 0
 }
 
 install_common_packages() {
-    echo -e "\n${LBLUE} >> Install common packages ${NC}"
-    pacman --noconfirm --needed -S ${packages[@]}
+    echo -e "\n${LBLUE} >> Install common packages (chroot) ${NC}"
+    pacman --noconfirm --needed -S ${PACKAGES[@]}
     pacman --noconfirm --needed -S haveged
     systemctl enable haveged
+    return 0
 }
 
 install_aur_tools() {
-    echo -e "\n${LBLUE} >> Install AUR tools ${NC}"
+    echo -e "\n${LBLUE} >> Install AUR tools (chroot) ${NC}"
+
+    sudo -u $USERNAME mkdir -p /home/$USERNAME/.config # avoid config directory created by root
 
     if [ -n "$KEYSERVER" ]; then
         [ -d /home/$USERNAME/.gnupg ] || sudo -u $USERNAME mkdir -p /home/$USERNAME/.gnupg
@@ -408,14 +444,16 @@ install_aur_tools() {
         sudo -u $USERNAME chmod 600 /home/$USERNAME/.gnupg/gpg.conf
     fi
 
-    pacman --noconfirm --needed -S cmake git go
+    pacman --noconfirm --needed -S cmake git git-lfs go
+    sudo -u $USERNAME git lfs install >/dev/null 2>&1 || echo "initialize git lfs"
     sudo -u $USERNAME git clone https://aur.archlinux.org/yay.git /tmp/yay
     cd /tmp/yay && sudo -u $USERNAME makepkg --noconfirm -si && cd -
     sudo -u $USERNAME yay --noconfirm -Syu
+    return 0
 }
 
 install_video_driver() {
-    echo -e "\n${LBLUE} >> Graphic card detection ${NC}"
+    echo -e "\n${LBLUE} >> Graphic card detection (chroot) ${NC}"
 
     if lspci -v | grep "VGA" -A 12 | grep -q "Intel" >/dev/null 2>&1; then
         echo -e "Install open-source Intel driver."
@@ -437,10 +475,11 @@ install_video_driver() {
         echo -e "Install open-source amdgpu driver"
         pacman --noconfirm --needed -S mesa xf86-video-amdgpu opencl-mesa opencl-headers libclc
     fi
+    return 0
 }
 
 setup_btrfs_swapfile() {
-    echo -e "\n${LBLUE} >> BTRFS Swapfile ${NC}"
+    echo -e "\n${LBLUE} >> BTRFS Swapfile (chroot) ${NC}"
     chattr +C /swap
     truncate -s 0 /swap/swapfile
     chattr +C /swap/swapfile
@@ -450,16 +489,27 @@ setup_btrfs_swapfile() {
     mkswap /swap/swapfile
     swapon /swap/swapfile
     echo "/swap/swapfile none swap defaults 0 3" >> /etc/fstab
+    return 0
 }
 
 systemd_settings() {
     echo -e "\n${LBLUE} >> systemd settings ${NC}"
+
+    echo "Set shutdown timeout"
     sed -i 's/.*DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=10s/g' /etc/systemd/system.conf
-    echo "done"
+
+    echo "Forwarding the journal to /dev/tty12"
+    mkdir -p /etc/systemd/journald.conf.d
+    echo "[Journal]" > /etc/systemd/journald.conf.d/fw-tty12.conf
+    echo "ForwardToConsole=yes" >> /etc/systemd/journald.conf.d/fw-tty12.conf
+    echo "TTYPath=/dev/tty12" >> /etc/systemd/journald.conf.d/fw-tty12.conf
+    echo "MaxLevelConsole=info" >> /etc/systemd/journald.conf.d/fw-tty12.conf
+
+    return 0
 }
 
 setup_ssh_server() {
-    echo -e "\n${LBLUE} >> Setup SSH Server ${NC}"
+    echo -e "\n${LBLUE} >> Setup SSH Server (chroot) ${NC}"
     pacman --noconfirm --needed -S openssh
     groupadd sshusers
     usermod -a -G sshusers $USERNAME
@@ -468,6 +518,14 @@ setup_ssh_server() {
     echo "DenyGroups root" >> /etc/ssh/sshd_config
     echo "AllowGroups sshusers" >> /etc/ssh/sshd_config
     systemctl enable sshd.service
+    return 0
+}
+
+system_hardening() {
+    echo -e "\n${LBLUE} >> Hardening System (chroot) ${NC}"
+    sed -i 's/^umask .*$/umask 077/g' /etc/profile  # default file access permissions
+    echo "done"
+    return 0
 }
 
 install_bootloader_grub() {
@@ -475,11 +533,11 @@ install_bootloader_grub() {
     # NOTE: To protect against offline tampering threats, see mkinitcpio-chkcryptoboot hook (AUR)
     device_uuid="$1"; shift
     drive_passphrase="$1"; shift
-    echo -e "\n${LBLUE} >> Install Bootloader Grub ${NC}"
+    echo -e "\n${LBLUE} >> Install Bootloader Grub (chroot) ${NC}"
     pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
 
     echo -e "create a keyfile for the LUKS Partition so that you only have to unlock the root partition once"
-    dd bs=512 count=8 if=/dev/urandom of=/disk.key
+    dd bs=512 count=8 if=/dev/random of=/disk.key iflag=fullblock
     echo -e "Add keyfile to luks encrypted partition"
     echo -en "$drive_passphrase" | cryptsetup luksAddKey /dev/disk/by-uuid/${device_uuid} /disk.key
 
@@ -499,7 +557,34 @@ install_bootloader_grub() {
     fi
 
     systemctl enable grub-btrfs.path
+
     mkinitcpio -P
+    chmod 600 /boot/initramfs-linux*
+
+    # Initramfs permissions are set to 644 by default, all users will be able to dump the keyfile!
+    # Workaround: use systemd service to set new initramfs to 600
+    cat > /usr/lib/systemd/system/initramfs-keyfile.path <<EOF
+[Unit]
+Description=Monitors for new initramfs
+
+[Path]
+PathModified=/boot
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    cat > /usr/lib/systemd/system/initramfs-keyfile.service <<EOF
+[Unit]
+Description=Make sure the permissions for initramfs are still 600 after kernel update
+
+[Service]
+Type=oneshot
+ExecStart=bash -c 'chmod 600 /boot/initramfs-linux*'
+EOF
+
+    systemctl enable initramfs-keyfile.path
+
     grub-install --efi-directory=/boot/efi --bootloader-id=arch
     grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -510,11 +595,12 @@ install_bootloader_grub() {
             cp -v /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo
         fi
     fi
+    return 0
 }
 
 install_memtest86() {
     command -v yay >/dev/null || return
-    echo -e "\n${LBLUE} >> Install Memtest86 ${NC}"
+    echo -e "\n${LBLUE} >> Install Memtest86 (chroot) ${NC}"
     sudo -u $USERNAME yay --noconfirm -S memtest86-efi
 
     MEMTEST86_PATH="/usr/share/memtest86-efi"
@@ -545,10 +631,11 @@ FOE
         sed -i "s|@CHOICE@|3|g" /etc/memtest86-efi/memtest86-efi.conf
         sed -i "s|install=0|install=1|g" /etc/memtest86-efi/memtest86-efi.conf
     fi
+    return 0
 }
 
 virtualbox_fix() {
-    echo -e "\n${LBLUE} >> VirtualBox Fix${NC}"
+    echo -e "\n${LBLUE} >> VirtualBox Fix (chroot) ${NC}"
 
     # fix host: vm freeze caused by btrfs
     sudo -u $USERNAME mkdir -p "/home/$USERNAME/VirtualBox VMs"
@@ -560,12 +647,13 @@ virtualbox_fix() {
         echo "\EFI\arch\grubx64.efi" > /boot/efi/startup.nsh
 
     echo "done"
+    return 0
 }
 
 setup_snapper() {
     [ -d /.snapshots ] || return # continue only if we have a common btrfs structure
     [ -f /etc/snapper/configs/root ] && return
-    echo -e "\n${LBLUE} >> Setup Snapper${NC}"
+    echo -e "\n${LBLUE} >> Setup Snapper (chroot) ${NC}"
     pacman --noconfirm --needed -S snapper snap-pac
 
     #NOTE: snapper required a not existing /.snapshots directory for setup!
@@ -589,10 +677,11 @@ setup_snapper() {
     btrfs sub delete /.snapshots
     mkdir /.snapshots
     mount -a # mount .snapshots from fstab
+    return 0
 }
 
 create_btrfs_recover_script() {
-    echo -e "\n${LBLUE} >> Create BTRFS Recover Script${NC}"
+    echo -e "\n${LBLUE} >> Create BTRFS Recover Script (chroot) ${NC}"
     pacman -S --needed --noconfirm fzf  # install recover script dependencies
     cat > /usr/bin/btrfs-system-recover <<EOF
 #!/bin/bash
@@ -621,16 +710,18 @@ echo "recovery successful (restart your system to complete the restore process)"
 EOF
     chmod +x /usr/bin/btrfs-system-recover
     echo "/usr/bin/btrfs-system-recover created"
+    return 0
 }
 
 create_btrfs_snapshot() {
-    echo -e "\n${LBLUE} >> Create btrfs snapshot ${NC}"
+    echo -e "\n${LBLUE} >> Create btrfs snapshot (chroot) ${NC}"
     snapshot_name="System_Recovery_$(date +%Y_%m_%d)"
     btrfs subvolume snapshot / /.snapshots/$snapshot_name # we create a rw snapshot (use -r for read-only)
 
     # update gub file if we use grub as bootloader
     [ -f /boot/grub/grub.cfg ] && \
         grub-mkconfig -o /boot/grub/grub.cfg
+    return 0
 }
 
 
@@ -662,12 +753,15 @@ if [ "$1" == "chroot" ]; then
     create_btrfs_recover_script
 
     [ $SSH_SERVER != 0 ] && setup_ssh_server
+    [ $HARDENED != 0 ] && system_hardening
 
     removeInstallPermission
     create_btrfs_snapshot
     rm /setup.sh && exit 0
 else # "init"
     print_logo
+    check_efi
+    print_config
     select_device   # Set _DEVICE
     partition_drive "$_DEVICE"
 

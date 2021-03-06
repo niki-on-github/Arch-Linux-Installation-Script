@@ -34,13 +34,3 @@ reboot
 ```
 
 **NOTE:** Replace `$SNAPSHOT` with your snapshot directory name
-
-### Reset user home (Optional)
-
-**NOTE:** Only intended for non-productive systems:
-
-```bash
-su $username
-sudo rm -rf /home/$username/{*,.*}
-cp -rT /etc/skel/ /home/$username/
-```
