@@ -17,8 +17,10 @@ CRYPT_DEV_LABEL="system"
 HOSTNAME="archlinux"
 USERNAME="arch"
 HARDENED=1
-PROPRIETARY_VIDEO_DRIVER=0
+PROPRIETARY_VIDEO_DRIVER=1
 SSH_SERVER=0
+ADD_BLACK_ARCH_REPO=1
+REFRESH_PACMAN_KEYS=0
 LUKS_PBKDF_ITERATIONS=500000
 LOGFILE="/install_error.log"
 
@@ -29,7 +31,8 @@ LOGFILE="/install_error.log"
 # - When KEYSERVER var is an empty string, then we use the default keyserver.
 ##########################################################################################################
 
-KEYSERVER="pool.sks-keyservers.net"
+#KEYSERVER="pool.sks-keyservers.net"
+KEYSERVER=""
 
 
 ##########################################################################################################
@@ -101,7 +104,7 @@ check_efi() {
 
 print_config() {
     echo -e "\n${LBLUE} >> Config ${NC}"
-    head -n 55 $0 | grep -v "^#" | grep -v "^$"
+    head -n 57 $0 | grep -v "^#" | grep -v "^$"
     echo -e "\n"
     return 0
 }
@@ -135,7 +138,7 @@ partition_drive() {
 
     # if installation failed we need to remove the broken setup first
     if [ -e /dev/mapper/$CRYPT_DEV_LABEL ]; then
-        umount -A -v /dev/mapper/$CRYPT_DEV_LABEL
+        umount -A -v -f /dev/mapper/$CRYPT_DEV_LABEL
         cryptsetup luksClose $CRYPT_DEV_LABEL
     fi
 
@@ -369,7 +372,8 @@ setting_up_locale() {
 create_user() {
     user_passphrase="$1"; shift
     echo -e "\n${LBLUE} >> Create User (chroot) ${NC}"
-    useradd -g users -G wheel,audio,video -m -s /bin/bash $USERNAME
+    groupadd -r audit # for apparmor notifications
+    useradd -g users -G wheel,audio,video,uucp,audit -m -s /bin/bash $USERNAME
     sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
     echo -e "${USERNAME}:${user_passphrase}" | chpasswd
     echo -e "root:${user_passphrase}" | chpasswd
@@ -391,6 +395,7 @@ removeInstallPermission() {
 update_system() {
     echo -e "\n${LBLUE} >> Update System (chroot) ${NC}"
     sed -i "s/^#Color/Color/" /etc/pacman.conf
+    sed -i "s/^#ParallelDownloads.*$/ParallelDownloads = 4/g" /etc/pacman.conf
     pacman-key --populate archlinux
     pacman --noconfirm -Syy archlinux-keyring
 
@@ -403,10 +408,22 @@ update_system() {
         fi
     fi
 
-    pacman-key --refresh-keys
+    if [ $REFRESH_PACMAN_KEYS != 0 ]; then
+        pacman-key --refresh-keys # Warning: time consuming
+    fi
+
     reflector --download-timeout 10 --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
     pacman --noconfirm -Syu
     return 0
+}
+
+add_black_arch_repo() {
+    pushd /tmp
+    pacman --noconfirm --needed -S curl
+    curl -O https://blackarch.org/strap.sh
+    chmod +x strap.sh
+    ./strap.sh
+    popd
 }
 
 network_settings() {
@@ -423,13 +440,16 @@ network_settings() {
 install_common_packages() {
     echo -e "\n${LBLUE} >> Install common packages (chroot) ${NC}"
     pacman --noconfirm --needed -S ${PACKAGES[@]}
-    pacman --noconfirm --needed -S haveged
+    pacman --noconfirm --needed -S haveged cmake git git-lfs
+    sudo -u $USERNAME git lfs install >/dev/null 2>&1 || echo "initialize git lfs"
+    # pacman --noconfirm --needed -S iptables-nft
+    # systemctl enable nftables
     systemctl enable haveged
     return 0
 }
 
-install_aur_tools() {
-    echo -e "\n${LBLUE} >> Install AUR tools (chroot) ${NC}"
+install_yay() {
+    echo -e "\n${LBLUE} >> Install AUR helper yay (chroot) ${NC}"
 
     sudo -u $USERNAME mkdir -p /home/$USERNAME/.config # avoid config directory created by root
 
@@ -444,36 +464,74 @@ install_aur_tools() {
         sudo -u $USERNAME chmod 600 /home/$USERNAME/.gnupg/gpg.conf
     fi
 
-    pacman --noconfirm --needed -S cmake git git-lfs go
-    sudo -u $USERNAME git lfs install >/dev/null 2>&1 || echo "initialize git lfs"
-    sudo -u $USERNAME git clone https://aur.archlinux.org/yay.git /tmp/yay
-    cd /tmp/yay && sudo -u $USERNAME makepkg --noconfirm -si && cd -
+    if [ $ADD_BLACK_ARCH_REPO != 0 ]; then
+        pacman --noconfirm --needed -S yay
+    else
+        pacman --noconfirm --needed -S go
+        sudo -u $USERNAME git clone https://aur.archlinux.org/yay.git /tmp/yay
+        pushd /tmp/yay
+        sudo -u $USERNAME makepkg --noconfirm -si
+        popd
+    fi
     sudo -u $USERNAME yay --noconfirm -Syu
+    sed -i 's/^#MAKEFLAGS=.*$/MAKEFLAGS="-j$(expr $(nproc) \+ 1)"/g' /etc/makepkg.conf
+    return 0
+}
+
+install_paru() {
+    echo -e "\n${LBLUE} >> Install AUR helper paru (chroot) ${NC}"
+    sudo -u $USERNAME mkdir -p /home/$USERNAME/.config # avoid config directory created by root
+
+    if [ -n "$KEYSERVER" ]; then
+        [ -d /home/$USERNAME/.gnupg ] || sudo -u $USERNAME mkdir -p /home/$USERNAME/.gnupg
+        sudo -u $USERNAME chmod 700 /home/$USERNAME/.gnupg
+        if grep -q "^keyserver " /home/$USERNAME/.gnupg ; then
+            sudo -u $USERNAME sed -i 's/^keyserver .*$/keyserver '$(echo "$KEYSERVER" | sed 's/\//\\\//g')'/g' /home/$USERNAME/.gnupg/gpg.conf
+        else
+            echo "keyserver $KEYSERVER" | sudo -u $USERNAME tee -a /home/$USERNAME/.gnupg/gpg.conf
+        fi
+        sudo -u $USERNAME chmod 600 /home/$USERNAME/.gnupg/gpg.conf
+    fi
+
+    if [ $ADD_BLACK_ARCH_REPO != 0 ]; then
+        pacman --noconfirm --needed -S paru
+    else
+        pacman --noconfirm --needed -S rustup
+        sudo -u $USERNAME git lfs install >/dev/null 2>&1 || echo "initialize git lfs"
+        sudo -u $USERNAME rustup install stable
+        sudo -u $USERNAME rustup default stable
+        sudo -u $USERNAME git clone https://aur.archlinux.org/paru.git /tmp/paru
+        pushd /tmp/paru
+        sudo -u $USERNAME makepkg --noconfirm -si
+        popd
+    fi
+    sudo -u $USERNAME paru --noconfirm -Syu
+    sed -i 's/^#MAKEFLAGS=.*$/MAKEFLAGS="-j$(expr $(nproc) \+ 1)"/g' /etc/makepkg.conf
     return 0
 }
 
 install_video_driver() {
     echo -e "\n${LBLUE} >> Graphic card detection (chroot) ${NC}"
 
-    if lspci -v | grep "VGA" -A 12 | grep -q "Intel" >/dev/null 2>&1; then
-        echo -e "Install open-source Intel driver."
+    if lspci 2>&1 | grep "VGA" -A 2 | grep -q "Intel"; then
+        echo -e "Install open-source Intel driver"
         pacman --noconfirm --needed -S mesa xf86-video-intel
     fi
 
-    if lspci -v | grep "VGA" -A 12 | grep -q "NVIDIA" >/dev/null 2>&1; then
-        echo -e "A NVIDIA GeForce card was detected."
+    if lspci 2>&1 | grep "VGA" -A 2 | grep -q "NVIDIA"; then
+        echo -e "A NVIDIA card was detected."
         if [ $PROPRIETARY_VIDEO_DRIVER != 0 ]; then
-            echo -e "Install proprietary NVIDIA driver."
+            echo -e "Install proprietary NVIDIA driver"
             pacman --noconfirm --needed -S nvidia nvidia-utils
         else
-            echo -e "Install open-source NVIDIA driver."
+            echo -e "Install open-source NVIDIA driver"
             pacman --noconfirm --needed -S xf86-video-nouveau
         fi
     fi
 
-    if lspci -v | grep "VGA" -A 12 | grep -q -E "(Radeon|AMD)" >/dev/null 2>&1; then
+    if lspci 2>&1 | grep "VGA" -A 2 | grep -q -E "(Radeon|AMD)"; then
         echo -e "Install open-source amdgpu driver"
-        pacman --noconfirm --needed -S mesa xf86-video-amdgpu opencl-mesa opencl-headers libclc
+        pacman --noconfirm --needed -S mesa opencl-mesa opencl-headers libclc
     fi
     return 0
 }
@@ -496,7 +554,7 @@ systemd_settings() {
     echo -e "\n${LBLUE} >> systemd settings ${NC}"
 
     echo "Set shutdown timeout"
-    sed -i 's/.*DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=10s/g' /etc/systemd/system.conf
+    sed -i 's/.*DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=16s/g' /etc/systemd/system.conf
 
     echo "Forwarding the journal to /dev/tty12"
     mkdir -p /etc/systemd/journald.conf.d
@@ -523,7 +581,16 @@ setup_ssh_server() {
 
 system_hardening() {
     echo -e "\n${LBLUE} >> Hardening System (chroot) ${NC}"
-    sed -i 's/^umask .*$/umask 077/g' /etc/profile  # default file access permissions
+
+    #NOTE: may lead to problems with git lfs
+    # echo "set default file access permissions"
+    #sed -i 's/^umask .*$/umask 077/g' /etc/profile
+
+    echo "setup fail2ban"
+    pacman --noconfirm --needed -S fail2ban
+    if [ $SSH_SERVER != 0 ]; then echo -e "[sshd]\nenabled = true" > /etc/fail2ban/jail.d/sshd.local; fi
+    systemctl enable fail2ban
+
     echo "done"
     return 0
 }
@@ -598,16 +665,33 @@ EOF
     return 0
 }
 
+install_apparmor() {
+    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="lsm=landlock,lockdown,yama,apparmor,bpf audit=1 /g' /etc/default/grub
+    grub-mkconfig -o /boot/grub/grub.cfg
+    pacman --noconfirm --needed -S apparmor audit
+    systemctl enable apparmor.service
+    systemctl enable --now auditd.service
+    sed -i 's/^log_group = root/log_group = audit/g' /etc/audit/auditd.conf
+}
+
 install_memtest86() {
-    command -v yay >/dev/null || return
+    AUR_HELPER=""
+    if command -v yay >/dev/null ; then
+        AUR_HELPER="yay"
+    elif command -v paru >/dev/null ; then
+        AUR_HELPER="paru"
+    fi
+    [ -z "$AUR_HELPER" ] && return 0
     echo -e "\n${LBLUE} >> Install Memtest86 (chroot) ${NC}"
-    sudo -u $USERNAME yay --noconfirm -S memtest86-efi
+    eval "sudo -u $USERNAME $AUR_HELPER --noconfirm -S memtest86-efi"
 
     MEMTEST86_PATH="/usr/share/memtest86-efi"
     [ ! -d $MEMTEST86_PATH ] && echo -e "${RED}MemTest86 install failed (DirectoryNotFound: $MEMTEST86_PATH) ${NC}" && return
 
     mkdir -pv "/boot/efi/EFI/memtest86"
-    cd $MEMTEST86_PATH && find . -type f -not -iname '*.efi' -exec cp '{}' '/boot/efi/EFI/memtest86/{}' ';' && cd -
+    pushd $MEMTEST86_PATH
+    find . -type f -not -iname '*.efi' -exec cp '{}' '/boot/efi/EFI/memtest86/{}' ';'
+    popd
     cp -v "$MEMTEST86_PATH/bootx64.efi" "/boot/efi/EFI/memtest86/memtestx64.efi"
 
     boot_uuid=$(get_uuid "/dev/disk/by-partlabel/$PARTLABEL_BOOT")
@@ -740,13 +824,15 @@ if [ "$1" == "chroot" ]; then
     create_user "$_USER_PASSWORD"
     addInstallPermission
     update_system
+    [ $ADD_BLACK_ARCH_REPO != 0 ] && add_black_arch_repo
     network_settings
     install_common_packages
-    install_aur_tools
+    install_paru
     install_video_driver
     setup_btrfs_swapfile
     systemd_settings
     install_bootloader_grub "$_CRYPT_DEV_UUID" "$_DRIVE_PASSPHRASE"
+    [ $HARDENED != 0 ] && install_apparmor
     install_memtest86
     virtualbox_fix
     setup_snapper
