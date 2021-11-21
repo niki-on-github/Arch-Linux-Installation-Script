@@ -285,7 +285,7 @@ user_password() {
 update_mirrorlist() {
     echo -e "\n${LBLUE} >> Update Mirrorlist ${NC}"
     pacman --noconfirm --needed -Sy reflector
-    reflector --download-timeout 10 --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+    reflector --country "$MIRROR" --age 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
     return 0
 }
 
@@ -293,7 +293,7 @@ install_system() {
     echo -e "\n${LBLUE} >> Install System ${NC}"
     timedatectl set-ntp true
 
-    base_packages=( base base-devel linux-firmware btrfs-progs reflector vi nano sudo xdg-user-dirs nvme-cli rsync )
+    base_packages=( base base-devel linux-firmware btrfs-progs reflector sudo xdg-user-dirs nvme-cli rsync )
 
     if [ $HARDENED != 0 ]; then
         echo -e "Install hardened Linux Kernel"
@@ -352,6 +352,7 @@ setting_timezone() {
     echo -e "\n${LBLUE} >> Setting Timezone (chroot) ${NC}"
     rm -f /etc/localtime
     ln -sf $LOCALTIME /etc/localtime
+    systemctl enable --now systemd-timesyncd.service
     timedatectl set-ntp true
     hwclock --systohc --utc
     echo "done"
@@ -412,7 +413,7 @@ update_system() {
         pacman-key --refresh-keys # Warning: time consuming
     fi
 
-    reflector --download-timeout 10 --country "$MIRROR" -l 30 --sort rate --save /etc/pacman.d/mirrorlist
+    reflector --country "$MIRROR" --age 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
     pacman --noconfirm -Syu
     return 0
 }
