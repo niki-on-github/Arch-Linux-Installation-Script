@@ -441,7 +441,8 @@ network_settings() {
 install_common_packages() {
     echo -e "\n${LBLUE} >> Install common packages (chroot) ${NC}"
     pacman --noconfirm --needed -S ${PACKAGES[@]}
-    pacman --noconfirm --needed -S haveged cmake git git-lfs
+    pacman --noconfirm --needed -S haveged cmake git git-lfs xdg-user-dirs
+    sudo -u $USERNAME xdg-user-dirs-update --force
     sudo -u $USERNAME git lfs install >/dev/null 2>&1 || echo "initialize git lfs"
     # pacman --noconfirm --needed -S iptables-nft
     # systemctl enable nftables
