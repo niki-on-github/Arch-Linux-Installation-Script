@@ -352,7 +352,7 @@ setting_timezone() {
     echo -e "\n${LBLUE} >> Setting Timezone (chroot) ${NC}"
     rm -f /etc/localtime
     ln -sf $LOCALTIME /etc/localtime
-    systemctl enable --now systemd-timesyncd.service
+    systemctl enable systemd-timesyncd.service
     timedatectl set-ntp true
     hwclock --systohc --utc
     echo "done"
@@ -671,7 +671,7 @@ install_apparmor() {
     grub-mkconfig -o /boot/grub/grub.cfg
     pacman --noconfirm --needed -S apparmor audit
     systemctl enable apparmor.service
-    systemctl enable --now auditd.service
+    systemctl enable auditd.service
     sed -i 's/^log_group = root/log_group = audit/g' /etc/audit/auditd.conf
 }
 
