@@ -34,3 +34,15 @@ reboot
 ```
 
 **NOTE:** Replace `$SNAPSHOT` with your snapshot directory name
+
+## Installation
+
+1. Boot from Arch Linux UEFI Installationsmedium.
+2. Start SSH server: `systemctl start sshd`.
+3. Set SSH password for root user: `passwd`.
+4. Get IP Address: `ìp a`.
+5. From remote PC run `ssh root@IP` with password from step `3`
+6. Install git: `pacman -Sy git`.
+7. Clone Repository with git: `git clone https://github.com/niki-on-github/Arch-Linux-Installation-Script.git`.
+8. Use vim to edit the configuration of the install script: `vim install.sh`.
+9. Run the installer: `bash install.sh`.
