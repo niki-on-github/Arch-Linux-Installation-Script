@@ -435,6 +435,7 @@ network_settings() {
     echo "127.0.0.1 $HOSTNAME.local $HOSTNAME" >> /etc/hosts
     pacman --noconfirm --needed -S networkmanager net-tools
     systemctl enable NetworkManager.service
+    systemctl enable systemd-resolved.service
     return 0
 }
 
