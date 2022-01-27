@@ -557,7 +557,7 @@ systemd_settings() {
     echo -e "\n${LBLUE} >> systemd settings ${NC}"
 
     echo "Set shutdown timeout"
-    sed -i 's/.*DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=16s/g' /etc/systemd/system.conf
+    sed -i 's/.*DefaultTimeoutStopSec=.*$/DefaultTimeoutStopSec=20s/g' /etc/systemd/system.conf
 
     echo "Forwarding the journal to /dev/tty12"
     mkdir -p /etc/systemd/journald.conf.d
