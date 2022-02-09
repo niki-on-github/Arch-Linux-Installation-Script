@@ -375,7 +375,7 @@ create_user() {
     echo -e "\n${LBLUE} >> Create User (chroot) ${NC}"
     groupadd -r audit # for apparmor notifications
     useradd -g users -G wheel,audio,video,uucp,audit -m -s /bin/bash $USERNAME
-    sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+    sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g' /etc/sudoers
     echo -e "${USERNAME}:${user_passphrase}" | chpasswd
     echo -e "root:${user_passphrase}" | chpasswd
     echo "done"
