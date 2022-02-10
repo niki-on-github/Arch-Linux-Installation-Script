@@ -639,6 +639,7 @@ Description=Monitors for new initramfs
 
 [Path]
 PathModified=/boot
+TriggerLimitIntervalSec=60s
 
 [Install]
 WantedBy=multi-user.target
