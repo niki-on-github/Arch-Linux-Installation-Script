@@ -46,3 +46,34 @@ reboot
 7. Clone Repository with git: `git clone https://github.com/niki-on-github/Arch-Linux-Installation-Script.git`.
 8. Use vim to edit the configuration of the install script: `vim install.sh`.
 9. Run the installer: `bash install.sh`.
+
+## Maintenance
+
+To keep your btrfs volume clean and ensure data integrity you should execute scrubbing and balancing once per year.
+
+### Scrubbing
+
+This checks all checksums and corrects possible errors by using redundant copy from an btrfs RAID1 configuration. If no RAID1 configuration exists an error is printed. This is the main mechanism against bitrot. This process needs a long time and is really I/O heavy!
+
+Scrubbing control commands:
+
+```bash
+sudo btrfs scrub start /path/to/an/mounted/btrfs-volume
+sudo btrfs scrub status /path/to/an/mounted/btrfs-volume
+sudo btrfs scrub cancel /path/to/an/mounted/btrfs-volume
+sudo btrfs scrub resume /path/to/an/mounted/btrfs-volume
+```
+
+### Balancing
+
+Commands to rebalance blocks (data/metadata) with less then 80% usage:
+
+```bash
+sudo btrfs balance start -dusage=80 /path/to/an/mounted/btrfs-volume
+sudo btrfs balance start -musage=80 /path/to/an/mounted/btrfs-volume
+
+```
+
+## Replace failed disk
+
+See: [Using Btrfs with Multiple Devices](https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices)
