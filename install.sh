@@ -606,6 +606,11 @@ install_bootloader_grub() {
     echo -e "\n${LBLUE} >> Install Bootloader Grub (chroot) ${NC}"
     pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
 
+    if [ ! -e /dev/disk/by-uuid/${device_uuid} ]; then
+        echo -e "${RED}WARNING: /dev/disk/by-uuid/${device_uuid} does not exists. Workaround we create the link now ${NC}"
+        ln -s /dev/mapper/${CRYPT_DEV_LABEL} /dev/disk/by-uuid/${device_uuid}
+    fi
+
     echo -e "create a keyfile for the LUKS Partition so that you only have to unlock the root partition once"
     dd bs=512 count=8 if=/dev/random of=/disk.key iflag=fullblock
     echo -e "Add keyfile to luks encrypted partition"
