@@ -98,7 +98,7 @@ print_logo() {
 }
 
 check_efi() {
-    [ ! -e /sys/firmware/efi/efivars ] && echo "${RED}[ERROR] Not booted via UEFI, installation is not possible! ${NC}" && exit 1
+    [ ! -e /sys/firmware/efi/efivars ] && echo -e "${RED}[ERROR] Not booted via UEFI, installation is not possible! ${NC}" && exit 1
     return 0
 }
 
