@@ -679,7 +679,7 @@ install_bootloader_grub() {
     echo -e "\n${LBLUE} >> Install Bootloader Grub (chroot) ${NC}"
     pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
 
-    sed -i 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="rootflags=subvol='${BTRFS_SYS_SUBVOLUME}'/' /etc/default/grub
+    sed -i 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="rootflags=subvol='${BTRFS_SYS_SUBVOLUME}'"/' /etc/default/grub
     sed -i 's/loglevel=3 quiet/loglevel=3/g' /etc/default/grub
 
     if lscpu -J | grep -q "Intel" >/dev/null 2>&1; then
