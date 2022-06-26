@@ -17,6 +17,7 @@ CRYPT_DEV_LABEL="system"
 HOSTNAME="archlinux"
 USERNAME="arch"
 HARDENED=1
+ENCRYPT_DRIVE=1
 PROPRIETARY_VIDEO_DRIVER=1
 SSH_SERVER=0
 ADD_BLACK_ARCH_REPO=0
@@ -598,12 +599,12 @@ system_hardening() {
     return 0
 }
 
-install_bootloader_grub() {
+install_bootloader_grub_with_crypt_dev() {
     # NOTE: My Grub disk decryption is only configured with us keyboard layout
     # NOTE: To protect against offline tampering threats, see mkinitcpio-chkcryptoboot hook (AUR)
     device_uuid="$1"; shift
     drive_passphrase="$1"; shift
-    echo -e "\n${LBLUE} >> Install Bootloader Grub (chroot) ${NC}"
+    echo -e "\n${LBLUE} >> Install Bootloader Grub for encrypted device (chroot) ${NC}"
     pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
 
     if [ ! -e /dev/disk/by-uuid/${device_uuid} ]; then
@@ -671,6 +672,38 @@ EOF
             cp -v /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo
         fi
     fi
+    return 0
+}
+
+install_bootloader_grub() {
+    echo -e "\n${LBLUE} >> Install Bootloader Grub (chroot) ${NC}"
+    pacman --noconfirm --needed -S grub-btrfs efibootmgr mkinitcpio
+
+    sed -i 's/GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="rootflags=subvol='${BTRFS_SYS_SUBVOLUME}'/' /etc/default/grub
+    sed -i 's/loglevel=3 quiet/loglevel=3/g' /etc/default/grub
+
+    if lscpu -J | grep -q "Intel" >/dev/null 2>&1; then
+        echo -e "Intel CPU was detected -> add intel_iommu=on"
+        sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="intel_iommu=on /g' /etc/default/grub
+    elif lscpu -J | grep -q "AMD" >/dev/null 2>&1; then
+        echo -e "AMD CPU was detected -> add amd_iommu=on"
+        sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="amd_iommu=on /g' /etc/default/grub
+    fi
+
+    systemctl enable grub-btrfs.path
+
+    mkinitcpio -P
+    grub-install --efi-directory=/boot/efi --bootloader-id=arch
+    grub-mkconfig -o /boot/grub/grub.cfg
+
+    # grub de language fix:
+    if [ "$LOCALE" = "de_DE.UTF-8" ]; then
+        if [ -f /usr/share/locale/de/LC_MESSAGES/grub.mo ]; then
+            mkdir -p /boot/grub/locale
+            cp -v /usr/share/locale/de/LC_MESSAGES/grub.mo /boot/grub/locale/de.gmo
+        fi
+    fi
+
     return 0
 }
 
@@ -840,7 +873,11 @@ if [ "$1" == "chroot" ]; then
     install_video_driver
     setup_btrfs_swapfile
     systemd_settings
-    install_bootloader_grub "$_CRYPT_DEV_UUID" "$_DRIVE_PASSPHRASE"
+    if [ $ENCRYPT_DRIVE != 0 ]; then
+        install_bootloader_grub_with_crypt_dev "$_CRYPT_DEV_UUID" "$_DRIVE_PASSPHRASE"
+    else
+        install_bootloader_grub
+    fi
     [ $HARDENED != 0 ] && install_apparmor
     install_memtest86
     virtualbox_fix
@@ -860,11 +897,17 @@ else # "init"
     select_device   # Set _DEVICE
     partition_drive "$_DEVICE"
 
-    _CRYPT_DEV="/dev/disk/by-partlabel/$PARTLABEL_ROOT"
-    enrypt_drive "$_CRYPT_DEV"  # Set _DRIVE_PASSPHRASE
-
     _BOOT_DEV="/dev/disk/by-partlabel/$PARTLABEL_BOOT"
-    _ROOT_DEV="/dev/mapper/$CRYPT_DEV_LABEL"
+    if [ $ENCRYPT_DRIVE != 0 ]; then
+        _CRYPT_DEV="/dev/disk/by-partlabel/$PARTLABEL_ROOT"
+        _ROOT_DEV="/dev/mapper/$CRYPT_DEV_LABEL"
+        enrypt_drive "$_CRYPT_DEV"  # Set _DRIVE_PASSPHRASE
+    else
+        _DRIVE_PASSPHRASE=""
+        _CRYPT_DEV="/dev/disk/by-partlabel/$PARTLABEL_ROOT"
+        _ROOT_DEV="$_CRYPT_DEV"
+    fi
+
     setup_filesystem "$_BOOT_DEV" "$_ROOT_DEV"
 
     user_password   # Set _USER_PASSWORD
