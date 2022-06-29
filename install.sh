@@ -665,6 +665,10 @@ EOF
     grub-install --efi-directory=/boot/efi --bootloader-id=arch
     grub-mkconfig -o /boot/grub/grub.cfg
 
+    if [ ! -f /boot/grub/grub.cfg ]; then
+        echo "${RED}ERROR: /boot/grub/grub.cfg missing${NC}"
+    fi
+
     # grub de language fix:
     if [ "$LOCALE" = "de_DE.UTF-8" ]; then
         if [ -f /usr/share/locale/de/LC_MESSAGES/grub.mo ]; then
