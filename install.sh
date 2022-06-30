@@ -768,9 +768,9 @@ virtualbox_fix() {
     echo -e "\n${LBLUE} >> VirtualBox Fix (chroot) ${NC}"
 
     # fix host: vm freeze caused by btrfs
-    sudo -u $USERNAME mkdir -p "/home/$USERNAME/VirtualBox VMs"
-    sudo -u $USERNAME chattr +C "/home/$USERNAME/VirtualBox VMs"
-    sudo -u $USERNAME btrfs property set "/home/$USERNAME/VirtualBox VMs" compression none
+    # sudo -u $USERNAME mkdir -p "/home/$USERNAME/VirtualBox VMs"
+    # sudo -u $USERNAME chattr +C "/home/$USERNAME/VirtualBox VMs"
+    # sudo -u $USERNAME btrfs property set "/home/$USERNAME/VirtualBox VMs" compression none
 
     # fix guest: grub
     [ -f /boot/efi/EFI/arch/grubx64.efi ] && \
