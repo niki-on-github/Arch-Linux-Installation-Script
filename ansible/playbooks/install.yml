@@ -1,0 +1,14 @@
+---
+- hosts: archlinux
+
+  vars_prompt:
+
+    - name: install_device
+      prompt: Specify Install Device (e.g. nvme0n1)
+      private: false
+
+  roles:
+    - role: archlinux/install/efi-check
+    - role: archlinux/install/partition
+    - role: archlinux/install/encrypt
+    - role: archlinux/install/filesystem

@@ -1,0 +1,51 @@
+---
+- block:
+  # root
+
+  - name: 'Install required packages'
+    package:
+      name:
+        - arch-install-scripts
+      state: latest
+
+  - name: "Check for ADM CPU"
+    lineinfile:
+      path: /proc/cpuinfo
+      regexp: '.*AMD.*'
+      state: absent
+    check_mode: yes
+    register: amd_cpu
+
+  - name: "Check for Intel CPU"
+    lineinfile:
+      path: /proc/cpuinfo
+      regexp: '.*Intel.*'
+      state: absent
+    check_mode: yes
+    register: intel_cpu
+
+  - name: "Add intel-ucode"
+    set_fact:
+      pacstrap_base_packages: "{{ pacstrap_base_packages + [ 'intel-ucode' ] }}"
+    when: intel_cpu.found
+
+  - name: "Add amd-ucode"
+    set_fact:
+      pacstrap_base_packages: "{{ pacstrap_base_packages + [ 'amd-ucode' ] }}"
+    when: amd_cpu.found
+
+  - name: "Add linux"
+    set_fact:
+      pacstrap_packages: "{{ pacstrap_base_packages + linux_packages }}"
+    when: not hardened_install
+
+  - name: "Add linux-hardened"
+    set_fact:
+      pacstrap_packages: "{{ pacstrap_base_packages + linux_hardened_packages }}"
+    when: hardened_install
+
+  - name: "pacstrap"
+    shell:
+      cmd: "pacstrap {{ install_path }} {{ pacstrap_packages | join(' ') }}"
+
+  become: true

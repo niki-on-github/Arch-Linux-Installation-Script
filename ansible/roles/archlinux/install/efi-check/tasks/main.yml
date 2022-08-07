@@ -1,0 +1,15 @@
+---
+- block:
+  # root
+
+  - name: "Get /sys/firmware/efi/efivars"
+    stat:
+      path: "/sys/firmware/efi/efivars"
+    register: efivars
+
+  - name: "EFI check"
+    fail:
+      msg: "Not running in EFI mode"
+    when: not efivars.stat.exists
+
+  become: true

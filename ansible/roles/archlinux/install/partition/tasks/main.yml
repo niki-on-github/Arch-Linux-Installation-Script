@@ -1,0 +1,38 @@
+---
+- block:
+  # root
+
+  - name: 'Install required packages'
+    package:
+      name:
+        - parted
+      state: latest
+
+  - name: "Delete exising partitions on /dev/{{ install_device }}"
+    command: "wipefs --force --quiet --all /dev/{{ install_device }}"
+
+  - name: "Create boot partition on {{ install_device }}"
+    community.general.parted:
+      device: "/dev/{{ install_device }}"
+      name: "{{ part_label_boot }}"
+      label: gpt
+      number: 1
+      part_type: primary
+      flags: [ boot ]
+      state: present
+      part_start: 1MiB
+      part_end: 256MiB
+
+  - name: "Create root partition on {{ install_device }}"
+    community.general.parted:
+      device: "/dev/{{ install_device }}"
+      name: "{{ part_label_root }}"
+      label: gpt
+      number: 2
+      part_type: primary
+      state: present
+      part_start: 256MiB
+      part_end: 100%
+
+  become: true
+

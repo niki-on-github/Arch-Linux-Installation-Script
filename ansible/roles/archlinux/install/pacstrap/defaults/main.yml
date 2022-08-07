@@ -1,0 +1,19 @@
+pacstrap_base_packages:
+  - base
+  - base-devel
+  - linux-firmware
+  - btrfs-progs
+  - reflector
+  - sudo
+  - xdg-user-dirs
+  - nvme-cli
+  - rsync
+
+linux_packages:
+  - linux
+  - linux-headers
+
+linux_hardened_packages:
+  - linux-hardened
+  - linux-hardened-headers
+

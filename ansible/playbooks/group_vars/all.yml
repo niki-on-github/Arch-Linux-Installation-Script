@@ -1,0 +1,17 @@
+timezone: 'Europe/Berlin'
+locale: "de_DE.UTF-8"
+mirror: "Germany"
+lang: "de_DE.UTF-8"
+keymap: "de-latin1"
+install_path: "/mnt/install"
+arch_label: "arch"
+crypt_dev_label: "system"
+part_label_boot: "boot"
+part_label_root: "root"
+hostname: "archlinux"
+username: "arch"
+luks_pbkdf_iterations: 500000
+hardened_install: true
+encrypt_drive: true
+enable_ssh_server: false
+use_propietary_video_driver: true

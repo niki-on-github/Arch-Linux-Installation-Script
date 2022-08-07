@@ -1,0 +1,12 @@
+---
+- hosts: all
+
+  vars:
+    install_device: "vdb"
+    luks_passphrase: "test"
+
+  roles:
+    # - role: archlinux/install/partition
+    # - role: archlinux/install/encrypt
+    # - role: archlinux/install/filesystem
+    - role: archlinux/install/pacstrap

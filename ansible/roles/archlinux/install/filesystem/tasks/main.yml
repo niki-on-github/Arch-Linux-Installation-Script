@@ -1,0 +1,122 @@
+---
+- block:
+  # root
+
+  - name: 'Install required packages'
+    package:
+      name:
+        - dosfstools
+      state: latest
+
+  - name: "Create vfat Filesystem"
+    community.general.filesystem:
+      fstype: vfat
+      dev: "/dev/disk/by-partlabel/{{ part_label_boot }}"
+      opts: "-F 32"
+      force: true
+
+  - name: "Create btrfs Filesystem"
+    community.general.filesystem:
+      fstype: btrfs
+      dev: "/dev/mapper/{{ crypt_dev_label }}"
+      opts: "-L {{ arch_label }}"
+      force: true
+
+  - name: "Create mount point for btrfs root volume"
+    file:
+      path: '/mnt/btrfs-root'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
+
+  - name: "Mount btrfs root volume"
+    mount:
+      path: "/mnt/btrfs-root"
+      src: "LABEL={{ arch_label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }}'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
+
+  - name: "Create btrfs subvolumes"
+    command: "btrfs subvolume create \"/mnt/btrfs-root/{{ item }}\""
+    with_items:
+    - btrfs_sys_subvolume
+    - btrfs_sys_snapshot_subvolume
+    - btrfs_swap_subvolume
+    - btrfs_var_log_subvolume
+    - btrfs_home_subvolume
+
+  - name: "Mount btrfs subvolume {{ btrfs_sys_subvolume }} to {{ install_path }}"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}"
+      btrfs_subvolume: "{{ btrfs_sys_subvolume }}"
+
+  - name: "Mount btrfs subvolume {{ btrfs_sys_snapshot_subvolume }} to {{ install_path }}/.snapshots"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}/.snapshots"
+      btrfs_subvolume: "{{ btrfs_sys_snapshot_subvolume }}"
+
+  - name: "Mount btrfs subvolume {{ btrfs_var_log_subvolume }} to {{ install_path }}/var/log"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}/var/log"
+      btrfs_subvolume: "{{ btrfs_var_log_subvolume }}"
+
+  - name: "Mount btrfs subvolume {{ btrfs_swap_subvolume }} to {{ install_path }}/swap"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}/swap"
+      btrfs_subvolume: "{{ btrfs_swap_subvolume }}"
+
+  - name: "Mount btrfs subvolume {{ btrfs_home_subvolume }} to {{ install_path }}/home"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}/home"
+      btrfs_subvolume: "{{ btrfs_home_subvolume }}"
+
+  - name: "Create mount point for {{ install_path }}/boot/efi"
+    file:
+      path: '{{ install_path }}/boot/efi'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
+
+  - name: "Mount vfat /dev/disk/by-partlabel/{{ part_label_boot }} partition"
+    mount:
+      path: "{{ install_path }}/boot/efi"
+      src: "/dev/disk/by-partlabel/{{ part_label_boot }}"
+      fstype: 'vfat'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
+
+  - name: "Get /dev/disk/by-partlabel/{{ part_label_boot }} UUID"
+    shell:
+      cmd: "blkid /dev/disk/by-partlabel/{{ part_label_boot }} -s UUID -o value"
+    register: boot_uuid
+
+  - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
+    shell:
+      cmd: "blkid /dev/disk/by-partlabel/{{ part_label_root }} -s UUID -o value"
+    register: root_uuid
+
+  - name: "Create /etc"
+    file:
+      path: "{{ install_path }}/etc"
+      state: 'directory'
+      owner: '0'
+      group: '0'
+
+  - name: "Create fstab"
+    template:
+      src: fstab.j2
+      dest: "{{ install_path }}/etc/fstab"
+      owner: root
+      group: root
+      mode: 0644
+
+  become: true

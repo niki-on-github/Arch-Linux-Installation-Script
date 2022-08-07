@@ -1,0 +1,6 @@
+btrfs_mount_opts: "defaults,ssd,noatime,compress=lzo"
+btrfs_sys_subvolume: "@"
+btrfs_sys_snapshot_subvolume: "@snapshots"
+btrfs_swap_subvolume: "@swap"
+btrfs_home_subvolume: "@home"
+btrfs_var_log_subvolume: "@log"

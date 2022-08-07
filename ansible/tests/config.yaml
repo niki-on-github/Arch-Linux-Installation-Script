@@ -1,0 +1,7 @@
+---
+configs:
+  use: 'config1'
+  config1:
+    name: 'arch-install-test'
+    cpus: 4
+    memory: 8192

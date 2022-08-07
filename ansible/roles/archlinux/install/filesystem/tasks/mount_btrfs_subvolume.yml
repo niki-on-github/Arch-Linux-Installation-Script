@@ -1,0 +1,18 @@
+- block:
+
+  - name: "Create mount point for {{ btrfs_subvolume }}"
+    file:
+      path: '{{ mount_path }}'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
+
+  - name: "Mount btrfs {{ btrfs_subvolume }} volume"
+    mount:
+      path: "{{ mount_path }}"
+      src: "LABEL={{ arch_label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }},subvolume={{ btrfs_subvolume }}'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
