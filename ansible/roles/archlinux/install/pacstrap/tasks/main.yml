@@ -2,7 +2,7 @@
 - block:
   # root
 
-  - name: 'Install required packages'
+  - name: 'Install arch-install-scripts'
     package:
       name:
         - arch-install-scripts

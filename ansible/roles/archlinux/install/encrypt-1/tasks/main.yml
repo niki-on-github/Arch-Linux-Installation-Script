@@ -2,7 +2,7 @@
 - block:
   # root
 
-  - name: 'Install required packages'
+  - name: 'Install cryptsetup'
     package:
       name:
         - cryptsetup

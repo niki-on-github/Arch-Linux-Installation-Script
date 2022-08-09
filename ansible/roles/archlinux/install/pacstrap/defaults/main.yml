@@ -1,13 +1,25 @@
 pacstrap_base_packages:
+  - archlinux-keyring
   - base
   - base-devel
-  - linux-firmware
   - btrfs-progs
-  - reflector
-  - sudo
-  - xdg-user-dirs
+  - cmake
+  - curl
+  - ethtool
+  - git
+  - git-lfs
+  - linux-firmware
+  - mkinitcpio
   - nvme-cli
+  - openssh
+  - python3
+  - reflector
   - rsync
+  - sudo
+  - usbutils
+  - vim
+  - wget
+  - xdg-user-dirs
 
 linux_packages:
   - linux

@@ -1,0 +1,33 @@
+---
+- block:
+  # root
+
+  - name: 'Install mkinitcpio'
+    package:
+      name:
+        - mkinitcpio
+      state: latest
+
+  - name: "Set /etc/mkinitcpio.conf HOOKS"
+    ansible.builtin.lineinfile:
+      path: /etc/mkinitcpio.conf
+      regexp: '^HOOKS='
+      line: "HOOKS=( base udev autodetect modconf block keyboard keymap encrypt btrfs filesystems fsck )"
+
+  - name: "Set /etc/mkinitcpio.conf MODULES"
+    ansible.builtin.lineinfile:
+      path: /etc/mkinitcpio.conf
+      regexp: '^MODULES='
+      line: "MODULES=( crc32c vfio_pci vfio vfio_iommu_type1 vfio_virqfd )"
+
+  - name: "Set /etc/mkinitcpio.conf FILES"
+    ansible.builtin.lineinfile:
+      path: /etc/mkinitcpio.conf
+      regexp: '^FILES='
+      line: "FILES=( {{ luks_keyfile }} )"
+
+  - name: "Generate inital ramdisk"
+    command:
+      cmd: "mkinitcpio -P"
+
+  become: true

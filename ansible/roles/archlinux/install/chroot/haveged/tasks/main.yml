@@ -1,0 +1,16 @@
+---
+- block:
+  # root
+
+  - name: 'Install haveged'
+    package:
+      name:
+        - haveged
+      state: latest
+
+  - name: 'Enable haveged service'
+    systemd:
+      name: 'haveged'
+      enabled: 'yes'
+
+  become: true

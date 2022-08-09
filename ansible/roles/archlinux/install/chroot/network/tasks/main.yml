@@ -1,0 +1,28 @@
+---
+- block:
+  # root
+
+  - name: "Create /etc/hostname"
+    copy:
+      dest: "/etc/hostname"
+      content: |
+        {{ hostname }}
+
+  - name: 'Install NetworkManager'
+    package:
+      name:
+        - networkmanager
+        - net-tools
+      state: latest
+
+  - name: 'Enable networkmanager service'
+    systemd:
+      name: 'NetworkManager'
+      enabled: 'yes'
+
+  - name: 'Enable systemd-resolved service'
+    systemd:
+      name: 'systemd-resolved'
+      enabled: 'yes'
+
+  become: true

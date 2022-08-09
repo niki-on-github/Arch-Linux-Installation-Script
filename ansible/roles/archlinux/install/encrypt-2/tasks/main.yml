@@ -1,0 +1,28 @@
+---
+- block:
+  # root
+
+  - name: 'Install cryptsetup'
+    package:
+      name:
+        - cryptsetup
+      state: latest
+
+  - name: "Get {{ install_path }}{{ luks_keyfile }} stat"
+    stat:
+      path: "{{ install_path }}{{ luks_keyfile }}"
+    register: keyfile
+
+  - name: "Generate Luks Keyfile {{ install_path }}{{ luks_keyfile }}"
+    shell:
+      cmd: "dd bs=512 count=8 if=/dev/random of={{ install_path }}{{ luks_keyfile }} iflag=fullblock"
+    when: not keyfile.stat.exists
+
+  - name: "Add Keyfile to LUKS container {{ crypt_dev_label }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_root }}"
+      state: "opened"
+      passphrase: "{{ luks_passphrase }}"
+      new_keyfile: "{{ install_path}}{{ luks_keyfile }}"
+
+  become: true

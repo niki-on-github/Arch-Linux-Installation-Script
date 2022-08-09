@@ -1,0 +1,27 @@
+---
+- block:
+  # root
+
+  - name: "Set locale in /etc/locale.gen"
+    lineinfile:
+      path: /etc/locale.gen
+      regexp: '^#{{ locale }} UTF-8'
+      line: "{{ locale }} UTF-8"
+
+  - name: "Create /etc/locale.conf"
+    copy:
+      dest: "/etc/locale.conf"
+      content: |
+        LANG={{ lang }}
+
+  - name: "Create /etc/vconsole.conf"
+    copy:
+      dest: "/etc/vconsole.conf"
+      content: |
+        KEYMAP={{ keymap }}
+
+  - name: "Generate locale"
+    command:
+      cmd: "locale-gen"
+
+  become: true

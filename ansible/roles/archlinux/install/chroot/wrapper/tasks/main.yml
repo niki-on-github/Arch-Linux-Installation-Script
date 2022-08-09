@@ -1,0 +1,28 @@
+---
+- block:
+  # root
+
+  - name: "Create the chroot wrapper"
+    copy:
+      dest: "/tmp/chroot_wrapper"
+      mode: 0755
+      content: |
+        #!/bin/sh -e
+        exec arch-chroot {{ install_path }} /usr/bin/python3 "$@"
+
+  - name: "Create /tmp in chroot"
+    file:
+      path: "{{ install_path }}/etc"
+      state: 'directory'
+      owner: '0'
+      group: '0'
+
+  - name: "Bindmount /tmp to chroot for temporary ansible file transfers"
+    ansible.posix.mount:
+      path: "{{ install_path}}/tmp"
+      src: "/tmp"
+      opts: bind
+      state: mounted
+      fstype: none
+
+  become: true

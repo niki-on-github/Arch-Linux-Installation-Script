@@ -2,7 +2,7 @@
 - block:
   # root
 
-  - name: 'Install required packages'
+  - name: 'Install dosfstools'
     package:
       name:
         - dosfstools

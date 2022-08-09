@@ -1,0 +1,24 @@
+---
+- block:
+  # root
+
+  - name: "Create localtime symbolic link to {{ timezone }}"
+    file:
+      src: "/usr/share/zoneinfo/{{ timezone }}"
+      dest: "/etc/localtime"
+      state: link
+
+  - name: 'Enable systemd-timesyncd service'
+    systemd:
+      name: 'systemd-timesyncd'
+      enabled: 'yes'
+
+  # - name: "enable ntp"
+  #   command:
+  #     cmd: "timedatectl set-ntp true"
+
+  - name: "sync system clock"
+    command:
+      cmd: "hwclock --systohc --utc"
+
+  become: true

@@ -1,0 +1,12 @@
+---
+- hosts: archlinux
+
+  vars_prompt:
+
+    - name: user_password
+      prompt: User password
+      private: true
+      confirm: true
+
+  roles:
+    - role: archlinux/install/chroot/mkinitcpio

@@ -1,0 +1,15 @@
+---
+- hosts: all
+
+  vars:
+    user_password: "test"
+
+  roles:
+    - role: archlinux/install/chroot/timezone
+    - role: archlinux/install/chroot/locale
+    - role: archlinux/install/chroot/user
+    - role: archlinux/install/chroot/network
+    - role: archlinux/install/chroot/haveged
+    - role: archlinux/install/chroot/mkinitcpio
+
+  become: true

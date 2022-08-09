@@ -1,0 +1,28 @@
+---
+- block:
+
+  - name: "Create user group audit"
+    group:
+      name: audit
+      state: present
+
+  - name: "Create user {{ username }}"
+    user:
+      name: "{{ username }}"
+      shell: /bin/bash
+      groups: wheel,audio,video,uuco,audit,users
+      append: yes
+      password: "{{ user_password }}"
+
+  - name: 'Install xdg-user-dirs'
+    package:
+      name:
+        - xdg-user-dirs
+      state: latest
+
+  - name: "Generate xdg user dirs"
+    command:
+      cmd: "xdg-user-dirs-update --force"
+    become_user: "{{ username }}"
+
+  become: true
