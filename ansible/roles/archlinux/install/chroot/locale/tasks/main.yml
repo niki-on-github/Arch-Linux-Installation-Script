@@ -9,16 +9,18 @@
       line: "{{ locale }} UTF-8"
 
   - name: "Create /etc/locale.conf"
-    copy:
-      dest: "/etc/locale.conf"
-      content: |
-        LANG={{ lang }}
+    shell:
+      cmd: |
+        echo "LANG={{ lang }}" > /etc/locale.conf
+    args:
+      executable: /bin/bash
 
   - name: "Create /etc/vconsole.conf"
-    copy:
-      dest: "/etc/vconsole.conf"
-      content: |
-        KEYMAP={{ keymap }}
+    shell:
+      cmd: |
+        echo "KEYMAP={{ keymap }}" > /etc/vconsole.conf
+    args:
+      executable: /bin/bash
 
   - name: "Generate locale"
     command:

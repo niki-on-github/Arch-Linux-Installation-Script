@@ -3,10 +3,22 @@
   # root
 
   - name: "Create /etc/hostname"
-    copy:
-      dest: "/etc/hostname"
-      content: |
-        {{ hostname }}
+    shell:
+      cmd: |
+        echo "{{ hostname }}" > /etc/hostname
+    args:
+      executable: /bin/bash
+
+  - name: "Create /etc/hosts"
+    shell:
+      cmd: |
+        cat > /etc/hosts <<INEOF
+        127.0.0.1     localhost.localdomain   localhost
+        ::1           localhost.localdomain   localhost
+        127.0.0.1     {{ hostname }}.local   {{ hostname }}
+        INEOF
+    args:
+      executable: /bin/bash
 
   - name: 'Install NetworkManager'
     package:

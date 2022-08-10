@@ -10,9 +10,9 @@
     user:
       name: "{{ username }}"
       shell: /bin/bash
-      groups: wheel,audio,video,uuco,audit,users
+      groups: wheel,audio,video,uucp,audit,users
       append: yes
-      password: "{{ user_password }}"
+      password: "{{ user_password | password_hash('sha512') }}"
 
   - name: 'Install xdg-user-dirs'
     package:
@@ -22,7 +22,6 @@
 
   - name: "Generate xdg user dirs"
     command:
-      cmd: "xdg-user-dirs-update --force"
-    become_user: "{{ username }}"
+      cmd: "su -c 'xdg-user-dirs-update --force' -s /bin/sh {{ username }}"
 
   become: true
