@@ -6,9 +6,9 @@
     luks_passphrase: "test"
 
   roles:
-    - role: archlinux/install/partition
-    - role: archlinux/install/encrypt-1
-    - role: archlinux/install/filesystem
-    - role: archlinux/install/encrypt-2
-    - role: archlinux/install/pacstrap
+    # - role: archlinux/install/partition
+    # - role: archlinux/install/encrypt-1
+    # - role: archlinux/install/filesystem
+    # - role: archlinux/install/encrypt-2
+    # - role: archlinux/install/pacstrap
     - role: archlinux/install/chroot/wrapper

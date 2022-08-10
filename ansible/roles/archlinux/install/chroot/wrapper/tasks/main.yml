@@ -10,18 +10,23 @@
         #!/bin/sh -e
         exec arch-chroot {{ install_path }} /usr/bin/python3 "$@"
 
-  - name: "Create /tmp in chroot"
+  - name: "Create /tmp/ansible on host"
     file:
-      path: "{{ install_path }}/etc"
+      path: "/tmp/ansible"
       state: 'directory'
-      owner: '0'
-      group: '0'
+      mode: 0777
 
-  - name: "Bindmount /tmp to chroot for temporary ansible file transfers"
+  - name: "Create /tmp/ansible in chroot"
+    file:
+      path: "{{ install_path }}/tmp/ansible"
+      state: 'directory'
+      mode: 0777
+
+  - name: "Bindmount /tmp/ansible to chroot for temporary ansible file transfers"
     ansible.posix.mount:
-      path: "{{ install_path}}/tmp"
-      src: "/tmp"
-      opts: bind
+      path: "{{ install_path }}/tmp/ansible"
+      src: "/tmp/ansible"
+      opts: rbind
       state: mounted
       fstype: none
 

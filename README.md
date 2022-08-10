@@ -47,6 +47,18 @@ reboot
 8. Use vim to edit the configuration of the install script: `vim install.sh`.
 9. Run the installer: `bash install.sh`.
 
+### Troubleshoot
+
+#### git installation fail
+
+```bash
+killall gpg-agent
+rm -rf /etc/pacman.d/gnupg
+pacman-key --init
+pacman-key --populate archlinux
+pacman -Syy git
+```
+
 ## Maintenance
 
 To keep your btrfs volume clean and ensure data integrity you should execute scrubbing and balancing once per year.
