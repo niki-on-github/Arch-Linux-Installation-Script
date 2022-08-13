@@ -5,4 +5,4 @@ UUID={{ root_uuid }} /home btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_home_sub
 UUID={{ root_uuid }} /.snapshots btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_sys_snapshot_subvolume }} 0 2
 UUID={{ root_uuid }} /swap btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_swap_subvolume }} 0 2
 UUID={{ boot_uuid }} /boot/efi vfat defaults 0 2
-/swap/swapfile none swap defaults,nofail 0 3
+/swap/swapfile none swap defaults 0 3
