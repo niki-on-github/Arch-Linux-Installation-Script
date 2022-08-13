@@ -72,10 +72,14 @@
       path: "/.snapshots"
       state: 'directory'
 
-  - name: "mount all volumes from fstab"
-    command:
-      cmd: "mount -a"
-    ignore_errors: true
+  - name: "Mount btrfs {{ btrfs_sys_snapshot_subvolume }} volume"
+    mount:
+      path: "/.snapshots"
+      src: "LABEL={{ arch_label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_sys_snapshot_subvolume }}'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
 
   become: true
   when: not snapper_root_config.stat.exists
