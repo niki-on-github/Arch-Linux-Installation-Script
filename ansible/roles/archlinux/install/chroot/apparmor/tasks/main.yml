@@ -1,0 +1,27 @@
+---
+- block:
+  # root
+
+  - name: 'Install apparmor'
+    package:
+      name:
+        - apparmor
+        - audit
+      state: latest
+
+  - name: 'Enable apparmor service'
+    systemd:
+      name: "{{ item }}"
+      enabled: 'yes'
+    with_items:
+      - "apparmor"
+      - "auditd"
+
+  - name: "Set apparmor log group"
+    lineinfile:
+      path: /etc/locale.gen
+      regexp: '^log_group =.*'
+      line: "log_group = audit"
+
+  become: true
+  when: enable_apparmor

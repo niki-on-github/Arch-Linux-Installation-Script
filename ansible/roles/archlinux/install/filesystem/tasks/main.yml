@@ -42,11 +42,11 @@
   - name: "Create btrfs subvolumes"
     command: "btrfs subvolume create \"/mnt/btrfs-root/{{ item }}\""
     with_items:
-    - btrfs_sys_subvolume
-    - btrfs_sys_snapshot_subvolume
-    - btrfs_swap_subvolume
-    - btrfs_var_log_subvolume
-    - btrfs_home_subvolume
+    - "{{ btrfs_sys_subvolume }}"
+    - "{{ btrfs_sys_snapshot_subvolume }}"
+    - "{{ btrfs_swap_subvolume }}"
+    - "{{ btrfs_var_log_subvolume }}"
+    - "{{ btrfs_home_subvolume }}"
 
   - name: "Mount btrfs subvolume {{ btrfs_sys_subvolume }} to {{ install_path }}"
     include_tasks: mount_btrfs_subvolume.yml

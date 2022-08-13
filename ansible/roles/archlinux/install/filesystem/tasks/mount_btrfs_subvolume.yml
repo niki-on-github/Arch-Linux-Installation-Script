@@ -13,6 +13,10 @@
       path: "{{ mount_path }}"
       src: "LABEL={{ arch_label }}"
       fstype: 'btrfs'
-      opts: '{{ btrfs_mount_opts }},subvolume={{ btrfs_subvolume }}'
+      opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvolume }}'
       state: "mounted"
       fstab: /tmp/tmp.fstab
+
+  # - name: "mount btrfs {{ btrfs_subvolume }} volume"
+  #   shell:
+  #     cmd: "mount -t btrfs -o {{ btrfs_mount_opts }},subvol={{ btrfs_subvolume }} /dev/disk/by-label/{{ arch_label }} {{ mount_path }}"

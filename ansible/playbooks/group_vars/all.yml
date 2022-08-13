@@ -9,10 +9,12 @@ crypt_dev_label: "system"
 part_label_boot: "boot"
 part_label_root: "root"
 hostname: "archlinux"
+grub_locale: "de"
 username: "arch"
 luks_pbkdf_iterations: 500000
 hardened_install: true
 encrypt_drive: true
 enable_ssh_server: false
+enable_apparmor: true
 use_propietary_video_driver: true
 luks_keyfile: "/disk.key"

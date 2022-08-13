@@ -1,0 +1,42 @@
+---
+- block:
+  # root
+
+  - name: "Get VGA info"
+    shell: "lspci | grep VGA"
+    register: lspci_vga
+
+  - name: 'Install open-source Intel driver'
+    package:
+      name:
+        - mesa
+        - xf86-video-intel
+      state: latest
+    when: lspci_vga.stdout.lower().find ('intel') != -1
+
+  - name: 'Install open-source Nvidia driver'
+    package:
+      name:
+        - xf86-video-noveau
+      state: latest
+    when: not use_propietary_video_driver and lspci_vga.stdout.lower().find ('nvidia') != -1
+
+  - name: 'Install proprietary Nvidia driver'
+    package:
+      name:
+        - nvidia
+        - nvidia-utils
+      state: latest
+    when: use_propietary_video_driver and lspci_vga.stdout.lower().find ('nvidia') != -1
+
+  - name: 'Install open-source Readon & AMD driver'
+    package:
+      name:
+        - mesa
+        - opencl-mesa
+        - opencl-headers
+        - libclc
+      state: latest
+    when: lspci_vga.stdout.lower().find ('radeon') != -1 or lspci_vga.stdout.lower().find ('amd') != -1
+
+  become: true

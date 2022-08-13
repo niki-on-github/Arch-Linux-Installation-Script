@@ -1,0 +1,29 @@
+---
+- block:
+  # root
+
+  - name: "Set shutdown timeout"
+    lineinfile:
+      path: /etc/systemd/system.conf
+      regexp: '^.*DefaultTimeoutStopSec=.*$'
+      line: "DefaultTimeoutStopSec={{ systemd_default_timeout_stop_sec }}"
+
+  - name: "Create /etc/systemd/journald.conf.d"
+    file:
+      path: /etc/systemd/journald.conf.d
+      state: directory
+      group: root
+
+  - name: "Forwarding the journal to /dev/tty12"
+    shell:
+      cmd: |
+        cat > /etc/systemd/journald.conf.d/fw-tty12.conf <<INEOF
+        [Journal]
+        ForwardToConsole=yes
+        TTYPath=/dev/tty12
+        MaxLevelConsole=info
+        INEOF
+    args:
+      executable: /bin/bash
+
+  become: true

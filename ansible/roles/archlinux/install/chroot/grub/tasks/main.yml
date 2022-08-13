@@ -1,0 +1,138 @@
+---
+- block:
+  # root
+
+  - name: 'Install grub'
+    package:
+      name:
+        - grub-btrfs
+        - efibootmgr
+      state: latest
+
+  - name: "Enable grub Cryptodisk"
+    lineinfile:
+      path: /etc/default/grub
+      regexp: '^.*GRUB_ENABLE_CRYPTODISK=.*$'
+      line: "GRUB_ENABLE_CRYPTODISK=y"
+
+  - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
+    shell:
+      cmd: "blkid /dev/disk/by-partlabel/{{ part_label_root }} -s UUID -o value"
+    register: root_uuid
+
+  - name: "Enable grub Cryptodisk"
+    lineinfile:
+      path: /etc/default/grub
+      regexp: '^.*GRUB_CMDLINE_LINUX=.*$'
+      line: "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID={{ root_uuid }}:{{ crypt_dev_label }} rootflags=subvol={{ btrfs_sys_subvolume }} cryptkey=rootfs:{{ luks_keyfile }}\""
+
+  - name: "Check for ADM CPU"
+    lineinfile:
+      path: /proc/cpuinfo
+      regexp: '.*AMD.*'
+      state: absent
+    check_mode: yes
+    register: amd_cpu
+
+  - name: "Check for Intel CPU"
+    lineinfile:
+      path: /proc/cpuinfo
+      regexp: '.*Intel.*'
+      state: absent
+    check_mode: yes
+    register: intel_cpu
+
+  - name: "Add intel-iommu to GRUB_CMDLINE_LINUX_DEFAULT"
+    set_fact:
+      grub_cmdline_linux_default: "{{ intel_iommu_grub_cmdline_linux_default + grub_cmdline_linux_default }}"
+    when: intel_cpu.found
+
+  - name: "Add amd-iommu to GRUB_CMDLINE_LINUX_DEFAULT"
+    set_fact:
+      grub_cmdline_linux_default: "{{ amd_iommu_grub_cmdline_linux_default + grub_cmdline_linux_default }}"
+    when: amd_cpu.found
+
+  - name: "Add apparmor parameter to GRUB_CMDLINE_LINUX_DEFAULT"
+    set_fact:
+      grub_cmdline_linux_default: "{{ apparmor_grub_cmdline_linux_default + grub_cmdline_linux_default }}"
+    when: enable_apparmor
+
+  - name: "Set GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub"
+    lineinfile:
+      path: /etc/default/grub
+      regexp: '^.*GRUB_CMDLINE_LINUX_DEFAULT=.*$'
+      line: "GRUB_CMDLINE_LINUX_DEFAULT=\"{{ grub_cmdline_linux_default | join(' ') }}\""
+
+  - name: 'Enable grub-btrfs.path'
+    systemd:
+      name: 'grub-btrfs.path'
+      enabled: 'yes'
+
+  # Initramfs permissions are set to 644 by default, all users will be able to dump the keyfile!
+    # Workaround: use systemd service to set initramfs to 600 (e.g. on kernel update)
+  - name: "Create /usr/lib/systemd/system/initramfs-keyfile.path"
+    shell:
+      cmd: |
+        cat > /usr/lib/systemd/system/initramfs-keyfile.path <<INEOF
+        [Unit]
+        Description=Monitors for new initramfs
+
+        [Path]
+        PathModified=/boot
+        TriggerLimitIntervalSec=60s
+
+        [Install]
+        WantedBy=multi-user.target
+        INEOF
+    args:
+      executable: /bin/bash
+
+  - name: "Create systemd service to ensure that initramfs permissions are set to 600 after kernel update"
+    shell:
+      cmd: |
+        cat > /usr/lib/systemd/system/initramfs-keyfile.service <<INEOF
+        [Unit]
+        Description=Make sure the permissions for initramfs are still 600 after kernel update
+
+        [Service]
+        Type=oneshot
+        ExecStart=bash -c 'chmod 600 /boot/initramfs-linux*'
+        INEOF
+    args:
+      executable: /bin/bash
+
+  - name: 'Enable initramfs-keyfile.path'
+    systemd:
+      name: 'initramfs-keyfile.path'
+      enabled: 'yes'
+
+  - name: "Run grub-install"
+    command:
+      cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch"
+
+  - name: "Run grub-mkconfig"
+    command:
+      cmd: "grub-mkconfig -o /boot/grub/grub.cfg"
+
+  - name: "Create grub local directory"
+    file:
+      path: '/boot/grub/locale'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
+
+  - name: "Copy grub {{ grub_locale }} locale file to /boot/grub/locale/{{ grub_locale }}.gmo"
+    copy:
+      src: "/usr/share/locale/{{ grub_locale }}/LC_MESSAGES/grub.mo"
+      dest: "/boot/grub/locale/{{ grub_locale }}.gmo"
+      remote_src: yes
+
+  - name: "Create /boot/efi/startup.nsh"
+    shell:
+      cmd: |
+        echo "\\EFI\\arch\\grubx64.efi" > /boot/efi/startup.nsh
+    args:
+      executable: /bin/bash
+
+  become: true

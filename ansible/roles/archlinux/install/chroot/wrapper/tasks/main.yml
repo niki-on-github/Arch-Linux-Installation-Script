@@ -30,4 +30,9 @@
       state: mounted
       fstype: none
 
+  # required vor vagrant test setup
+  - name: "swapoff -a"
+    command:
+      cmd: "swapoff -a"
+
   become: true

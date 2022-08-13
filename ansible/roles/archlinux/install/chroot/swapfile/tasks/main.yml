@@ -1,0 +1,46 @@
+---
+- block:
+  # root
+
+  - name: "Check for existing swapfile"
+    stat:
+      path: /swap/swapfile
+    register: swapfile
+
+  - name: "chattr +C /swap"
+    command:
+      cmd: "chattr +C /swap"
+
+  become: true
+
+- block:
+  - name: "truncate -s 0 /swap/swapfile"
+    command:
+      cmd: "truncate -s 0 /swap/swapfile"
+
+  - name: "chattr +C /swap/swapfile"
+    command:
+      cmd: "chattr +C /swap/swapfile"
+
+  - name: "fallocate -l {{ swapfile_size }} /swap/swapfile"
+    command:
+      cmd: "fallocate -l {{ swapfile_size }} /swap/swapfile"
+
+  - name: "chmod 0600 /swap/swapfile"
+    command:
+      cmd: "chmod 0600 /swap/swapfile"
+
+  - name: "mkswap /swap/swapfile"
+    command:
+      cmd: "mkswap /swap/swapfile"
+
+  - name: "swapon /swap/swapfile"
+    command:
+      cmd: "swapon /swap/swapfile"
+
+  # - name: "Add swapfile to fstab"
+  #   command:
+  #     cmd: 'echo "/swap/swapfile none swap defaults,nofail 0 3" > /etc/fstab'
+
+  become: true
+  when: not swapfile.stat.exists

@@ -30,4 +30,13 @@
     command:
       cmd: "mkinitcpio -P"
 
+  # TODO why does this fail?
+  - name: "Set permissions for initramfs to 0600"
+    file:
+      dest: "{{ item }}"
+      mode: "0600"
+    with_fileglob:
+    - "/boot/initramfs-linux*"
+    ignore_errors: true
+
   become: true

@@ -1,0 +1,35 @@
+---
+- block:
+  # root
+
+  - name: 'Install base packages for paru'
+    package:
+      name:
+        - openssl
+        - rustup
+      state: latest
+
+  - name: "Create the aur_builder user"
+    user:
+      name: aur_builder
+      create_home: yes
+      group: wheel
+
+  - name: "Allow the aur_builder user to run sudo pacman without a password"
+    lineinfile:
+      path: /etc/sudoers.d/11-install-aur_builder
+      line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+      create: yes
+      validate: 'visudo -cf %s'
+
+  - name: 'rustup install stable for aur_builder user'
+    shell: |
+      rustup install stable
+    become_user: aur_builder
+
+  - name: 'rustup set stable as default for aur_builder user'
+    shell: |
+      rustup default stable
+    become_user: aur_builder
+
+  become: true

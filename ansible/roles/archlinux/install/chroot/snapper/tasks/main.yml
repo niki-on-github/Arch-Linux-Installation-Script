@@ -1,0 +1,89 @@
+---
+- block:
+  # root
+
+  - name: 'Install snapper'
+    package:
+      name:
+        - snapper
+        - snap-pac
+      state: latest
+
+  - name: "Get /etc/snapper/configs/root"
+    stat:
+      path: "/etc/snapper/configs/root"
+    register: snapper_root_config
+
+  become: true
+
+
+- block:
+  #root
+
+  - name: "Unmount ./snapshots"
+    mount:
+      path: "./snapshots"
+      state: unmounted
+
+  - name: "Delete ./snapshots"
+    file:
+      state: absent
+      path: "./snapshots"
+
+  - name: "snapper create root config"
+    command:
+      cmd: "snapper --no-dbus -c root create-config /"
+
+  - name: "Enable btrfs quota"
+    command:
+      cmd: "btrfs quota enable /"
+
+  - name: "Set snapper config TIMELINE_CREATE=no"
+    command:
+      cmd: 'snapper --no-dbus -c root set-config "TIMELINE_CREATE=no"'
+
+  - name: "Set snapper config NUMBER_CLEANUP=yes"
+    command:
+      cmd: 'snapper --no-dbus -c root set-config "NUMBER_CLEANUP=yes"'
+
+  - name: "Set snapper config NUMBER_MIN_AGE=0"
+    command:
+      cmd: 'snapper --no-dbus -c root set-config "NUMBER_MIN_AGE=0"'
+
+  - name: "Set snapper config NUMBER_LIMIT=25"
+    command:
+      cmd: 'snapper --no-dbus -c root set-config "NUMBER_LIMIT=25"'
+
+  - name: "Set snapper config NUMBER_LIMIT_IMPORTANT=5"
+    command:
+      cmd: 'snapper --no-dbus -c root set-config "NUMBER_LIMIT_IMPORTANT=5"'
+
+  - name: 'Enable snapper-cleanup.timer'
+    systemd:
+      name: 'snapper-cleanup.timer'
+      enabled: 'yes'
+
+  #NOTE: we delete the snapshots directory from snapper and use our own btrfs subvolume
+  - name: "delete snapper btrfs subvolume"
+    command:
+      cmd: "btrfs sub delete /.snapshots"
+
+  - name: "Create ./snapshots mount point"
+    file:
+      path: "./snapshots"
+      state: 'directory'
+
+  - name: "mount all volumes from fstab"
+    command:
+      cmd: "mount -a"
+
+  - name: "Create btrfs snapshot"
+    command:
+      cmd: "btrfs subvolume snapshot / /.snapshots/System_Recovery_$(date +%Y_%m_%d)"
+
+  - name: "Update grub config"
+    command:
+      cmd: "grub-mkconfig -o /boot/grub/grub.cfg"
+
+  become: true
+  when: not snapper_root_config.stat.exists

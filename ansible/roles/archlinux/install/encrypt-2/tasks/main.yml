@@ -25,4 +25,11 @@
       passphrase: "{{ luks_passphrase }}"
       new_keyfile: "{{ install_path}}{{ luks_keyfile }}"
 
+  - name: "Set permissions for {{ install_path }}{{ luks_keyfile }} to 0000"
+    file:
+      dest: "{{ install_path }}{{ luks_keyfile }}"
+      owner: '0'
+      group: '0'
+      mode: "0000"
+
   become: true
