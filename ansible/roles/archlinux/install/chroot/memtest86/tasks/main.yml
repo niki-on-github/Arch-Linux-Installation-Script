@@ -72,7 +72,7 @@
         #
 
         MEMTEST86_PATH=/usr/share/memtest86-efi
-        partition=/dev/disk/by-partlabel/boot
+        partition=/dev/disk/by-partlabel/{{ part_label_boot }}
         esp=/boot/efi
         choice=3
         install=1
