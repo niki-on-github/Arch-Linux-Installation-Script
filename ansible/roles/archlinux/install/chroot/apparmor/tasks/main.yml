@@ -19,7 +19,7 @@
 
   - name: "Set apparmor log group"
     lineinfile:
-      path: /etc/locale.gen
+      path: /etc/audit/auditd.conf
       regexp: '^log_group =.*'
       line: "log_group = audit"
 

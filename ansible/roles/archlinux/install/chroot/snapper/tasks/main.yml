@@ -20,15 +20,14 @@
 - block:
   #root
 
-  - name: "Unmount ./snapshots"
-    mount:
-      path: "./snapshots"
-      state: unmounted
+  - name: "umount /.snapshots"
+    command:
+      cmd: "umount /.snapshots"
+    ignore_errors: true
 
-  - name: "Delete ./snapshots"
-    file:
-      state: absent
-      path: "./snapshots"
+  - name: "umount /.snapshots"
+    command:
+      cmd: "rm -rf /.snapshots"
 
   - name: "snapper create root config"
     command:
@@ -70,7 +69,7 @@
 
   - name: "Create ./snapshots mount point"
     file:
-      path: "./snapshots"
+      path: "/.snapshots"
       state: 'directory'
 
   - name: "mount all volumes from fstab"

@@ -18,7 +18,11 @@
   - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
     shell:
       cmd: "blkid /dev/disk/by-partlabel/{{ part_label_root }} -s UUID -o value"
-    register: root_uuid
+    register: root_uuid_info
+
+  - name: "Create var root_uuid"
+    set_fact:
+      root_uuid: "{{ root_uuid_info.stdout }}"
 
   - name: "Enable grub Cryptodisk"
     lineinfile:
@@ -108,7 +112,8 @@
 
   - name: "Run grub-install"
     command:
-      cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch"
+      cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch --target=x86_64-efi"
+    ignore_errors: vagrant is defined and vagrant == true
 
   - name: "Run grub-mkconfig"
     command:

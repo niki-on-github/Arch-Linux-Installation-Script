@@ -1,3 +1,5 @@
+btrfs_sys_subvolume: "@"
+
 grub_cmdline_linux_default:
   - "loglevel=3"
 
