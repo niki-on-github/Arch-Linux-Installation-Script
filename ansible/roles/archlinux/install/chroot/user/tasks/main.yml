@@ -37,4 +37,11 @@
       - ".ssh"
       - ".cache"
 
+  - name: "Add wheel group to sudoers"
+    lineinfile:
+      path: /etc/sudoers.d/11-user
+      line: 'wheel ALL=(ALL:ALL) ALL'
+      create: yes
+      validate: 'visudo -cf %s'
+
   become: true
