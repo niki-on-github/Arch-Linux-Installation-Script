@@ -15,15 +15,12 @@
       group: root
 
   - name: "Forwarding the journal to /dev/tty12"
-    shell:
-      cmd: |
-        cat > /etc/systemd/journald.conf.d/fw-tty12.conf <<INEOF
+    copy:
+      dest: "/etc/systemd/journald.conf.d/fw-tty12.conf"
+      content: |
         [Journal]
         ForwardToConsole=yes
         TTYPath=/dev/tty12
         MaxLevelConsole=info
-        INEOF
-    args:
-      executable: /bin/bash
 
   become: true

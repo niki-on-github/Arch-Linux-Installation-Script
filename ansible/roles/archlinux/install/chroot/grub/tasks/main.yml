@@ -73,11 +73,11 @@
       enabled: 'yes'
 
   # Initramfs permissions are set to 644 by default, all users will be able to dump the keyfile!
-    # Workaround: use systemd service to set initramfs to 600 (e.g. on kernel update)
+  # Workaround: use systemd service to set initramfs to 600 (e.g. on kernel update)
   - name: "Create /usr/lib/systemd/system/initramfs-keyfile.path"
-    shell:
-      cmd: |
-        cat > /usr/lib/systemd/system/initramfs-keyfile.path <<INEOF
+    copy:
+      dest: "/usr/lib/systemd/system/initramfs-keyfile.path"
+      content: |
         [Unit]
         Description=Monitors for new initramfs
 
@@ -87,23 +87,17 @@
 
         [Install]
         WantedBy=multi-user.target
-        INEOF
-    args:
-      executable: /bin/bash
 
   - name: "Create systemd service to ensure that initramfs permissions are set to 600 after kernel update"
-    shell:
-      cmd: |
-        cat > /usr/lib/systemd/system/initramfs-keyfile.service <<INEOF
+    copy:
+      dest: "/usr/lib/systemd/system/initramfs-keyfile.service"
+      content: |
         [Unit]
         Description=Make sure the permissions for initramfs are still 600 after kernel update
 
         [Service]
         Type=oneshot
         ExecStart=bash -c 'chmod 600 /boot/initramfs-linux*'
-        INEOF
-    args:
-      executable: /bin/bash
 
   - name: 'Enable initramfs-keyfile.path'
     systemd:
@@ -142,10 +136,9 @@
       remote_src: yes
 
   - name: "Create /boot/efi/startup.nsh"
-    shell:
-      cmd: |
-        echo "\\EFI\\arch\\grubx64.efi" > /boot/efi/startup.nsh
-    args:
-      executable: /bin/bash
+    copy:
+      dest: "/boot/efi/startup.nsh"
+      content: |
+        \EFI\arch\grubx64.efi
 
   become: true

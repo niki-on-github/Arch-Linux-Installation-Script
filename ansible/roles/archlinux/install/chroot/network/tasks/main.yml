@@ -3,22 +3,18 @@
   # root
 
   - name: "Create /etc/hostname"
-    shell:
-      cmd: |
-        echo "{{ hostname }}" > /etc/hostname
-    args:
-      executable: /bin/bash
+    copy:
+      dest: "/etc/hostname"
+      content: |
+        {{ hostname }}
 
   - name: "Create /etc/hosts"
-    shell:
-      cmd: |
-        cat > /etc/hosts <<INEOF
+    copy:
+      dest: "/etc/hosts"
+      content: |
         127.0.0.1     localhost.localdomain   localhost
         ::1           localhost.localdomain   localhost
         127.0.0.1     {{ hostname }}.local   {{ hostname }}
-        INEOF
-    args:
-      executable: /bin/bash
 
   - name: 'Install NetworkManager'
     package:
@@ -29,12 +25,10 @@
 
   - name: 'Enable networkmanager service'
     systemd:
-      name: 'NetworkManager'
+      name: "{{ item }}"
       enabled: 'yes'
-
-  - name: 'Enable systemd-resolved service'
-    systemd:
-      name: 'systemd-resolved'
-      enabled: 'yes'
+    with_items:
+      - "NetworkManager"
+      - "systemd-resolved"
 
   become: true

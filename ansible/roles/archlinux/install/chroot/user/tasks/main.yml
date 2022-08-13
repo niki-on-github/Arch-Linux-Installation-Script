@@ -1,5 +1,13 @@
 ---
 - block:
+  # root
+
+  - name: 'Install sudo and xdg-user-dirs'
+    package:
+      name:
+        - sudo
+        - xdg-user-dirs
+      state: latest
 
   - name: "Create user group audit"
     group:
@@ -11,6 +19,11 @@
       name: sshusers
       state: present
 
+  - name: "Set root password"
+    user:
+      name: "root"
+      password: "{{ user_password | password_hash('sha512') }}"
+
   - name: "Create user {{ username }}"
     user:
       name: "{{ username }}"
@@ -20,22 +33,17 @@
       password: "{{ user_password | password_hash('sha512') }}"
       create_home: yes
 
-  - name: 'Install xdg-user-dirs'
-    package:
-      name:
-        - xdg-user-dirs
-      state: latest
-
   - name: "Generate xdg user dirs"
     command:
       cmd: "su -c 'xdg-user-dirs-update --force' -s /bin/sh {{ username }}"
 
-  - name: "Generate user directories"
+  - name: "Generate hidden user directories"
     command:
       cmd: "su -c 'mkdir -p /home/{{ username }}/{{ item }}' -s /bin/sh {{ username }}"
     with_items:
       - ".ssh"
       - ".cache"
+      - ".config"
 
   - name: "Add wheel group to sudoers"
     lineinfile:

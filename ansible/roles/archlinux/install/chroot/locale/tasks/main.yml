@@ -14,19 +14,11 @@
       content: |
         LANG={{ lang }}
 
-  # - name: "Create /etc/locale.conf"
-  #   shell:
-  #     cmd: |
-  #       echo "LANG={{ lang }}" > /etc/locale.conf
-  #   args:
-  #     executable: /bin/bash
-
   - name: "Create /etc/vconsole.conf"
-    shell:
-      cmd: |
-        echo "KEYMAP={{ keymap }}" > /etc/vconsole.conf
-    args:
-      executable: /bin/bash
+    copy:
+      dest: "/etc/vconsole.conf"
+      content: |
+        KEYMAP={{ keymap }}
 
   - name: "Generate locale"
     command:

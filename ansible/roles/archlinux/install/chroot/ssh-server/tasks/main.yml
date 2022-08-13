@@ -7,24 +7,14 @@
         - openssh
       state: latest
 
-  - name: "Check ssh server config"
-    lineinfile:
-      path: /etc/ssh/sshd_config
-      regexp: '^AllowGroups sshusers'
-      state: absent
-    check_mode: yes
-    changed_when: false
-    register: ssh_server_config
-
   - name: "Adjust ssh server config"
-    shell:
-      cmd: |
-        echo "DenyUsers root" >> /etc/ssh/sshd_config
-        echo "DenyGroups root" >> /etc/ssh/sshd_config
-        echo "AllowGroups sshusers" >> /etc/ssh/sshd_config
-    args:
-      executable: /bin/bash
-    when: not ssh_server_config.found
+    lineinfile:
+      path: "/etc/ssh/sshd_config"
+      line: "{{ item }}"
+    with_items:
+      - "DenyUsers root"
+      - "DenyGroups root"
+      - "AllowGroups sshusers"
 
   - name: 'Enable ssh server service'
     systemd:
