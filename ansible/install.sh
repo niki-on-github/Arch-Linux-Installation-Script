@@ -5,6 +5,10 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+mount -o remount,size=2G /run/archiso/cowspace
+pacman -Sy --noconfirm --needed ansible python-pip
+ansible-galaxy install -r requirements.yml
+
 while true; do
     echo -en "\nEnter user password: " && read -s user_passphrase
     echo -en "\nVerify password: " && read -s user_passphrase_verify
@@ -15,10 +19,6 @@ while true; do
         echo -e "${RED}\n[ERROR] password does not match! ${NC}"
     fi
 done
-
-mount -o remount,size=2G /run/archiso/cowspace
-pacman -Sy --noconfirm --needed ansible python-pip
-ansible-galaxy install -r requirements.yml
 
 lsblk
 ansible-playbook -i ./inventory/localhost ./playbooks/install-setup.yml
