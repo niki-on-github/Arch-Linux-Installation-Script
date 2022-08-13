@@ -1,1 +1,2 @@
 btrfs_mount_opts: "defaults,ssd,noatime,compress=lzo"
+btrfs_sys_snapshot_subvolume: "@snapshots"
