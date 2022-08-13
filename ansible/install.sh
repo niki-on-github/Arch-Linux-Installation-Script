@@ -20,6 +20,7 @@ mount -o remount,size=2G /run/archiso/cowspace
 pacman -Sy --noconfirm --needed ansible python-pip
 ansible-galaxy install -r requirements.yml
 
+lsblk
 ansible-playbook -i ./inventory/localhost ./playbooks/install-setup.yml
 if [ $? -ne 0 ]; then
     echo "Installation failed"
