@@ -7,6 +7,11 @@
       prompt: Specify Install Device (e.g. nvme0n1)
       private: false
 
+    - name: luks_passphrase
+      prompt: LUKS passphrase
+      private: true
+      confirm: true
+
   roles:
     - role: archlinux/install/init
     - role: archlinux/install/efi-check

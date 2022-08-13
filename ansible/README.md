@@ -1,13 +1,21 @@
 # Ansible Arch Install (WIP)
 
-An attempt to use ansible for the installation of Arch Linux.
+An attempt to use ansible for the installation of Arch Linux. **WIP!!**
 
 ## Usage
 
-### Install ansible
+### Install ansible and git
 
 ```bash
-sudo pacman -Sy ansible python-pip
+loadkeys de-latin1
+mount -o remount,size=2G /run/archiso/cowspace
+sudo pacman -Sy git ansible python-pip
+```
+
+### Clone this repository
+
+```bash
+git -c http.sslVerify=false clone [URL]
 ```
 
 ### Install Ansible dependencies
