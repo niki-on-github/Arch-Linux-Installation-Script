@@ -103,9 +103,9 @@
     set_fact:
       boot_uuid: "{{ boot_uuid_info.stdout }}"
 
-  - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
+  - name: "Get /dev/mapper/{{ crypt_dev_label }} UUID"
     shell:
-      cmd: "blkid /dev/disk/by-partlabel/{{ part_label_root }} -s UUID -o value"
+      cmd: "blkid /dev/mapper/{{ crypt_dev_label }} -s UUID -o value"
     register: root_uuid_info
 
   - name: "Create var root_uuid"
