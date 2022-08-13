@@ -1,0 +1,80 @@
+- block:
+  # root
+
+  - name: 'clone https://aur.archlinux.org/memtest86-efi.git'
+    command:
+      cmd: "su -c 'git clone https://aur.archlinux.org/memtest86-efi.git /home/{{ username }}/.cache/paru/clone/memtest86-efi' -s /bin/sh {{ username }}"
+    ignore_errors: true
+
+  - name: 'Build memtest86-efi'
+    command:
+      cmd: "su -c 'cd /home/{{ username }}/.cache/paru/clone/memtest86-efi && makepkg --noconfirm -f -s && cd -' -s /bin/sh {{ username }}"
+
+  - name: 'Install memtest86-efi'
+    shell:
+      cmd: |
+        pacman --noconfirm --needed -U /home/{{ username }}/.cache/paru/clone/memtest86-efi/memtest86-efi-*.pkg.tar.zst
+
+  - name: "Create /boot/efi/EFI/memtest86"
+    file:
+      path: "/boot/efi/EFI/memtest86"
+      state: 'directory'
+      owner: '0'
+      group: '0'
+
+  - name: "Copy memtest86 efi files"
+    copy:
+      src: "{{ item }}"
+      dest: "/boot/efi/EFI/memtest86/"
+      remote_src: true
+    with_fileglob:
+      - "/usr/share/memtest86-efi/*.efi"
+
+  - name: "Create memtestx64.efi"
+    copy:
+      src: "/usr/share/memtest86-efi/bootx64.ef"
+      dest: "/boot/efi/EFI/memtest86/memtestx64.efi"
+      remote_src: true
+
+  - name: "Get /dev/disk/by-partlabel/{{ part_label_boot }} UUID"
+    shell:
+      cmd: "blkid /dev/disk/by-partlabel/{{ part_label_boot }} -s UUID -o value"
+    register: boot_uuid_info
+
+  - name: "Create var boot_uuid"
+    set_fact:
+      boot_uuid: "{{ boot_uuid_info.stdout }}"
+
+  - name: "Create /etc/grub.d/86_memtest"
+    copy:
+      dest: "/etc/grub.d/86_memtest"
+      content: |
+        #!/bin/sh
+
+        cat <<EOF
+        menuentry "Memtest86" {
+            search --set=root --no-floppy --fs-uuid {{ boot_uuid }}
+            chainloader /EFI/memtest86/memtestx64.efi
+        }
+        EOF
+      mode: "0755"
+
+  - name: "Update grub config"
+    command:
+      cmd: "grub-mkconfig -o /boot/grub/grub.cfg"
+
+  - name: "Create memtest update configuration"
+    copy:
+      dest: "/etc/memtest86-efi/memtest86-efi.conf"
+      content: |
+        #
+        # /etc/memtest86-efi.conf
+        #
+
+        MEMTEST86_PATH=/usr/share/memtest86-efi
+        partition=/dev/disk/by-partlabel/boot
+        esp=/boot/efi
+        choice=3
+        install=1
+
+  become: true

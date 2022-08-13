@@ -42,7 +42,7 @@
       cmd: "su -c 'mkdir -p /home/{{ username }}/{{ item }}' -s /bin/sh {{ username }}"
     with_items:
       - ".ssh"
-      - ".cache"
+      - ".cache/paru/clone"
       - ".config"
 
   - name: "Add wheel group to sudoers"

@@ -18,6 +18,7 @@
     - role: archlinux/install/chroot/apparmor
     - role: archlinux/install/chroot/mkinitcpio
     - role: archlinux/install/chroot/grub
+    - role: archlinux/install/chroot/memtest86
     - role: archlinux/install/chroot/snapper
 
   become: true

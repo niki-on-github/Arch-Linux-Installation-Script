@@ -19,7 +19,7 @@
 
   - name: 'clone https://aur.archlinux.org/paru.git'
     command:
-      cmd: "su -c 'git clone https://aur.archlinux.org/paru.git /home/{{ username }}/.cache/paru' -s /bin/sh {{ username }}"
+      cmd: "su -c 'git clone https://aur.archlinux.org/paru.git /home/{{ username }}/.cache/paru/clone/paru' -s /bin/sh {{ username }}"
     ignore_errors: true
 
   - name: "Set system MAKEFLAGS"
@@ -30,11 +30,11 @@
 
   - name: 'Build paru'
     command:
-      cmd: "su -c 'cd /home/{{ username }}/.cache/paru && makepkg --noconfirm -f -s && cd -' -s /bin/sh {{ username }}"
+      cmd: "su -c 'cd /home/{{ username }}/.cache/paru/clone/paru && makepkg --noconfirm -f -s && cd -' -s /bin/sh {{ username }}"
 
   - name: 'Install paru'
     shell:
       cmd: |
-        pacman --noconfirm --needed -U /home/{{ username }}/.cache/paru/paru-*.pkg.tar.zst
+        pacman --noconfirm --needed -U /home/{{ username }}/.cache/paru/clone/paru/paru-*.pkg.tar.zst
 
   become: true
