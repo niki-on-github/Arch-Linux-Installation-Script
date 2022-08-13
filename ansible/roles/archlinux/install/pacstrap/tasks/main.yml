@@ -48,4 +48,12 @@
     shell:
       cmd: "pacstrap {{ install_path }} {{ pacstrap_packages | join(' ') }}"
 
+  - name: "Create btrfs recover script"
+    template:
+      src: btrfs-system-recover.j2
+      dest: "{{ install_path }}/usr/bin/btrfs-system-recover"
+      owner: root
+      group: root
+      mode: 0755
+
   become: true

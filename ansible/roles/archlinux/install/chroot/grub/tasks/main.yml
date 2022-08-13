@@ -113,7 +113,15 @@
   - name: "Run grub-install"
     command:
       cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch --target=x86_64-efi"
-    ignore_errors: vagrant is defined and vagrant == true
+    ignore_errors: vagrant is defined
+
+  - name: "Create grub directory"
+    file:
+      path: '/boot/grub'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
 
   - name: "Run grub-mkconfig"
     command:

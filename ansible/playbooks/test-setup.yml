@@ -6,6 +6,7 @@
     luks_passphrase: "test"
 
   roles:
+    - role: archlinux/install/init
     - role: archlinux/install/partition
     - role: archlinux/install/encrypt-1
     - role: archlinux/install/filesystem

@@ -9,11 +9,17 @@
       line: "{{ locale }} UTF-8"
 
   - name: "Create /etc/locale.conf"
-    shell:
-      cmd: |
-        echo "LANG={{ lang }}" > /etc/locale.conf
-    args:
-      executable: /bin/bash
+    copy:
+      dest: "/etc/locale.conf"
+      content: |
+        LANG={{ lang }}
+
+  # - name: "Create /etc/locale.conf"
+  #   shell:
+  #     cmd: |
+  #       echo "LANG={{ lang }}" > /etc/locale.conf
+  #   args:
+  #     executable: /bin/bash
 
   - name: "Create /etc/vconsole.conf"
     shell:

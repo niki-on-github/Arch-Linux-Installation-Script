@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+[ "$EUID" -ne 0 ] && echo "require root" && exit 1
+
+check() {
+    [ "$?" -eq "0" ] || echo "Error: Recovery failed"
+    [ -d /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}/boot ] || echo "Warning: System is not bootable anymore"
+    rm -d /tmp/btrfs-recover >/dev/null
+}
+trap check SIGHUP SIGINT SIGTERM EXIT
+
+if [ ! -d /tmp/btrfs-recover ]; then
+    mkdir -p /tmp/btrfs-recover
+    mount -t btrfs -o subvolid=0 /dev/mapper/{{ crypt_dev_label }} /tmp/btrfs-recover
+fi
+
+recover=$(find /tmp/btrfs-recover/{{ btrfs_sys_snapshot_subvolume }} -maxdepth 2 -name "info.xml" | fzf --preview 'cat {}' | sed 's/\/info.xml$//g') || exit 1
+[ -z "$recover" ] && exit 1
+
+[ ! -d $recover/snapshot ] && echo "[ERROR] SnapshotNotFound: $recover/snapshot" && exit 1
+
+echo "process system recover ... (may take several seconds)"
+rm -rf /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}/{*,.*} >/dev/null 2>&1 || echo "clear bad btrfs system root"  # return always true
+btrfs subvolume set-default /tmp/btrfs-recover
+[ ! -e /tmp/btrfs-recover/{{ btrfs_sys_subvolume }} ] || btrfs subvolume delete /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}
+btrfs subvolume snapshot $recover/snapshot /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}
+rm -f /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}/var/lib/pacman/db.lck
+echo "recovery successful (restart your system to complete the restore process)"

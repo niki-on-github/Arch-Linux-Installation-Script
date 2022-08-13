@@ -6,6 +6,7 @@ pacstrap_base_packages:
   - cmake
   - curl
   - ethtool
+  - fzf
   - git
   - git-lfs
   - linux-firmware

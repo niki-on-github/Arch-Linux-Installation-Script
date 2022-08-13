@@ -1,0 +1,11 @@
+---
+- block:
+  # root
+
+  - name: "Create {{ ansible_remote_tmp }} on host"
+    file:
+      path: "{{ ansible_remote_tmp }}"
+      state: 'directory'
+      mode: 0777
+
+  become: true

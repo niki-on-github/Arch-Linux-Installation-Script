@@ -6,11 +6,16 @@
       name: audit
       state: present
 
+  - name: "Create user group sshusers"
+    group:
+      name: sshusers
+      state: present
+
   - name: "Create user {{ username }}"
     user:
       name: "{{ username }}"
       shell: /bin/bash
-      groups: wheel,audio,video,uucp,audit,users
+      groups: wheel,audio,video,uucp,audit,sshusers,users
       append: yes
       password: "{{ user_password | password_hash('sha512') }}"
       create_home: yes
@@ -24,5 +29,12 @@
   - name: "Generate xdg user dirs"
     command:
       cmd: "su -c 'xdg-user-dirs-update --force' -s /bin/sh {{ username }}"
+
+  - name: "Generate user directories"
+    command:
+      cmd: "su -c 'mkdir -p /home/{{ username }}/{{ item }}' -s /bin/sh {{ username }}"
+    with_items:
+      - ".ssh"
+      - ".cache"
 
   become: true

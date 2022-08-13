@@ -9,4 +9,17 @@
       confirm: true
 
   roles:
+    - role: archlinux/install/chroot/timezone
+    - role: archlinux/install/chroot/locale
+    - role: archlinux/install/chroot/user
+    - role: archlinux/install/chroot/network
+    - role: archlinux/install/chroot/haveged
+    - role: archlinux/install/chroot/paru
+    - role: archlinux/install/chroot/ssh-server
+    - role: archlinux/install/chroot/swapfile
+    - role: archlinux/install/chroot/systemd
+    - role: archlinux/install/chroot/video-driver
+    - role: archlinux/install/chroot/apparmor
     - role: archlinux/install/chroot/mkinitcpio
+    - role: archlinux/install/chroot/grub
+    - role: archlinux/install/chroot/snapper

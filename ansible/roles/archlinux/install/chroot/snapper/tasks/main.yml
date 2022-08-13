@@ -67,7 +67,7 @@
     command:
       cmd: "btrfs sub delete /.snapshots"
 
-  - name: "Create ./snapshots mount point"
+  - name: "Create /.snapshots mount point"
     file:
       path: "/.snapshots"
       state: 'directory'
@@ -75,14 +75,25 @@
   - name: "mount all volumes from fstab"
     command:
       cmd: "mount -a"
+    ignore_errors: true
+
+  become: true
+  when: not snapper_root_config.stat.exists
+
+
+- block:
+  # root
 
   - name: "Create btrfs snapshot"
-    command:
-      cmd: "btrfs subvolume snapshot / /.snapshots/System_Recovery_$(date +%Y_%m_%d)"
+    shell:
+      cmd: |
+        btrfs subvolume snapshot / /.snapshots/System_Recovery_$(date +%Y_%m_%d-%H_%M_%S)
+    args:
+      executable: /bin/bash
 
   - name: "Update grub config"
     command:
       cmd: "grub-mkconfig -o /boot/grub/grub.cfg"
 
+
   become: true
-  when: not snapper_root_config.stat.exists

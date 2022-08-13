@@ -10,6 +10,8 @@
     - role: archlinux/install/chroot/user
     - role: archlinux/install/chroot/network
     - role: archlinux/install/chroot/haveged
+    - role: archlinux/install/chroot/paru
+    - role: archlinux/install/chroot/ssh-server
     - role: archlinux/install/chroot/swapfile
     - role: archlinux/install/chroot/systemd
     - role: archlinux/install/chroot/video-driver

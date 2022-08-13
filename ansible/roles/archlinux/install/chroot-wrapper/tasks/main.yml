@@ -2,6 +2,26 @@
 - block:
   # root
 
+  - name: "Create {{ ansible_remote_tmp }} on host"
+    file:
+      path: "{{ ansible_remote_tmp }}"
+      state: 'directory'
+      mode: 0777
+
+  - name: "Create {{ ansible_remote_tmp }} in chroot"
+    file:
+      path: "{{ install_path }}{{ ansible_remote_tmp }}"
+      state: 'directory'
+      mode: 0777
+
+  - name: "Bindmount {{ ansible_remote_tmp }} to chroot for temporary ansible file transfers"
+    ansible.posix.mount:
+      path: "{{ install_path }}{{ ansible_remote_tmp }}"
+      src: "{{ ansible_remote_tmp }}"
+      opts: rbind
+      state: mounted
+      fstype: none
+
   - name: "Create the chroot wrapper"
     copy:
       dest: "/tmp/chroot_wrapper"
@@ -9,26 +29,6 @@
       content: |
         #!/bin/sh -e
         exec arch-chroot {{ install_path }} /usr/bin/python3 "$@"
-
-  - name: "Create /tmp/ansible on host"
-    file:
-      path: "/tmp/ansible"
-      state: 'directory'
-      mode: 0777
-
-  - name: "Create /tmp/ansible in chroot"
-    file:
-      path: "{{ install_path }}/tmp/ansible"
-      state: 'directory'
-      mode: 0777
-
-  - name: "Bindmount /tmp/ansible to chroot for temporary ansible file transfers"
-    ansible.posix.mount:
-      path: "{{ install_path }}/tmp/ansible"
-      src: "/tmp/ansible"
-      opts: rbind
-      state: mounted
-      fstype: none
 
   # required vor vagrant test setup
   - name: "swapoff -a"

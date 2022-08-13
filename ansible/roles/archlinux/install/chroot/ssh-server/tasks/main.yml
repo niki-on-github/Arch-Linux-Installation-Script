@@ -1,0 +1,35 @@
+---
+- block:
+
+  - name: 'Install ssh server'
+    package:
+      name:
+        - openssh
+      state: latest
+
+  - name: "Check ssh server config"
+    lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^AllowGroups sshusers'
+      state: absent
+    check_mode: yes
+    changed_when: false
+    register: ssh_server_config
+
+  - name: "Adjust ssh server config"
+    shell:
+      cmd: |
+        echo "DenyUsers root" >> /etc/ssh/sshd_config
+        echo "DenyGroups root" >> /etc/ssh/sshd_config
+        echo "AllowGroups sshusers" >> /etc/ssh/sshd_config
+    args:
+      executable: /bin/bash
+    when: not ssh_server_config.found
+
+  - name: 'Enable ssh server service'
+    systemd:
+      name: 'sshd'
+      enabled: 'yes'
+
+  when: enable_ssh_server
+  become: true

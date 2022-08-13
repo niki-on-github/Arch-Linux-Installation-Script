@@ -37,20 +37,15 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision :ansible do |ansible|
     ansible.verbose = "vv"
-    # ansible.galaxy_role_file = 'requirements.yml'
-    # ansible.galaxy_roles_path = 'galaxy-roles'
     ansible.playbook = "./playbooks/test-setup.yml"
-    # ansible.inventory_path = "./inventory"
     ansible.groups = { "vagrant" => ["all"] }
+    ansible.extra_vars = { vagrant: "true" }
   end
 
   config.vm.provision :ansible do |ansible|
     ansible.verbose = "vv"
-    # ansible.galaxy_role_file = 'requirements.yml'
-    # ansible.galaxy_roles_path = 'galaxy-roles'
     ansible.playbook = "./playbooks/test-chroot.yml"
-    # ansible.inventory_path = "./inventory"
     ansible.groups = { "vagrant" => ["all"] }
-    ansible.extra_vars = { ansible_python_interpreter: "/tmp/chroot_wrapper", vagrant: "true" }
+    ansible.extra_vars = { ansible_python_interpreter: "/tmp/chroot_wrapper", vagrant: "true"}
   end
 end

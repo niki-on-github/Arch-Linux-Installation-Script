@@ -9,27 +9,32 @@
         - rustup
       state: latest
 
-  - name: "Create the aur_builder user"
-    user:
-      name: aur_builder
-      create_home: yes
-      group: wheel
+  - name: 'rustup install stable for {{ username }} user'
+    command:
+      cmd: "su -c 'rustup install stable' -s /bin/sh {{ username }}"
 
-  - name: "Allow the aur_builder user to run sudo pacman without a password"
+  - name: 'rustup set stable as default for {{ username }} user'
+    command:
+      cmd: "su -c 'rustup default stable' -s /bin/sh {{ username }}"
+
+  - name: 'clone https://aur.archlinux.org/paru.git'
+    command:
+      cmd: "su -c 'git clone https://aur.archlinux.org/paru.git /home/{{ username }}/.cache/paru' -s /bin/sh {{ username }}"
+    ignore_errors: true
+
+  - name: "Set system MAKEFLAGS"
     lineinfile:
-      path: /etc/sudoers.d/11-install-aur_builder
-      line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-      create: yes
-      validate: 'visudo -cf %s'
+      path: /etc/makepkg.conf
+      regexp: '^#MAKEFLAGS=.*$'
+      line: 'MAKEFLAGS="-j$(expr $(nproc) + 1)"'
 
-  - name: 'rustup install stable for aur_builder user'
-    shell: |
-      rustup install stable
-    become_user: aur_builder
+  - name: 'Build paru'
+    command:
+      cmd: "su -c 'cd /home/{{ username }}/.cache/paru && makepkg --noconfirm -f -s && cd -' -s /bin/sh {{ username }}"
 
-  - name: 'rustup set stable as default for aur_builder user'
-    shell: |
-      rustup default stable
-    become_user: aur_builder
+  - name: 'Install paru'
+    shell:
+      cmd: |
+        pacman --noconfirm --needed -U /home/{{ username }}/.cache/paru/paru-*.pkg.tar.zst
 
   become: true
