@@ -16,6 +16,7 @@ while true; do
     fi
 done
 
+mount -o remount,size=2G /run/archiso/cowspace
 pacman -Sy --noconfirm --needed ansible python-pip
 ansible-galaxy install -r requirements.yml
 
