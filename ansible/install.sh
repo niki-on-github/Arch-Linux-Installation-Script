@@ -16,7 +16,7 @@ while true; do
     fi
 done
 
-pacman -Sy ansible python-pip
+pacman -Sy --noconfirm --needed ansible python-pip
 ansible-galaxy install -r requirements.yml
 
 ansible-playbook -i ./inventory/localhost ./playbooks/install-setup.yml
