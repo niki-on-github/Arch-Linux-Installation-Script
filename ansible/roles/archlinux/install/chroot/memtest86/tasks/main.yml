@@ -35,12 +35,17 @@
       patterns: '*.efi'
     register: memtest86_efi_list
 
+  # TODO fails, Why?
+  # - name: "Copy memtest86 efi files"
+  #   copy:
+  #     src: "{{ item.path }}"
+  #     dest: "/boot/efi/EFI/memtest86/"
+  #     remote_source: true
+  #   loop: "{{ memtest86_efi_list.files }}"
+
   - name: "Copy memtest86 efi files"
-    copy:
-      remote_source: true
-      src: "{{ item.path }}"
-      dest: "/boot/efi/EFI/memtest86/"
-    loop: "{{ memtest86_efi_list.files }}"
+    shell:
+      cmd: "cp -fv /usr/share/memtest86-efi/*.efi /boot/efi/EFI/memtest86/"
 
   - name: "Create memtestx64.efi"
     copy:
