@@ -28,13 +28,19 @@
       owner: '0'
       group: '0'
 
+  - name: "Collect memtest86 efi files"
+    find:
+      paths: "/usr/share/memtest86-efi"
+      file_type: file
+      patterns: '*.efi'
+    register: memtest86_efi_list
+
   - name: "Copy memtest86 efi files"
     copy:
-      src: "{{ item }}"
+      remote_source: true
+      src: "{{ item.path }}"
       dest: "/boot/efi/EFI/memtest86/"
-      remote_src: true
-    with_fileglob:
-      - "/usr/share/memtest86-efi/*.efi"
+    loop: "{{ memtest86_efi_list.files }}"
 
   - name: "Create memtestx64.efi"
     copy:
