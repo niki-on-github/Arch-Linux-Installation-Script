@@ -1,6 +1,6 @@
-# Ansible Arch Install (WIP)
+# Ansible Arch Install
 
-An attempt to use ansible for the installation of Arch Linux. **WIP!!**
+An attempt to use ansible for the installation of Arch Linux.
 
 ## Usage
 

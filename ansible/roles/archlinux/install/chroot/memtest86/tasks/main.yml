@@ -1,6 +1,12 @@
 - block:
   # root
 
+  - name: 'Install memtest86 dependencies'
+    package:
+      name:
+        - p7zip
+      state: latest
+
   - name: 'clone https://aur.archlinux.org/memtest86-efi.git'
     command:
       cmd: "su -c 'git clone https://aur.archlinux.org/memtest86-efi.git /home/{{ username }}/.cache/paru/clone/memtest86-efi' -s /bin/sh {{ username }}"
@@ -32,7 +38,7 @@
 
   - name: "Create memtestx64.efi"
     copy:
-      src: "/usr/share/memtest86-efi/bootx64.ef"
+      src: "/usr/share/memtest86-efi/bootx64.efi"
       dest: "/boot/efi/EFI/memtest86/memtestx64.efi"
       remote_src: true
 

@@ -9,12 +9,12 @@ crypt_dev_label: "system"
 part_label_boot: "boot"
 part_label_root: "root"
 hostname: "archlinux"
-grub_locale: "de"
 username: "arch"
+grub_locale: "de"
 luks_pbkdf_iterations: 500000
 hardened_install: true
 enable_ssh_server: true
 enable_apparmor: true
 use_propietary_video_driver: true
 luks_keyfile: "/disk.key"
-ansible_remote_tmp: "/.ansible" # macht to ansible.cfg
+ansible_remote_tmp: "/.ansible" # this must macht assignment in ansible.cfg

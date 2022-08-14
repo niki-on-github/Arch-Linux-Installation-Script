@@ -30,9 +30,4 @@
         #!/bin/sh -e
         exec arch-chroot {{ install_path }} /usr/bin/python3 "$@"
 
-  # required vor vagrant test setup
-  - name: "swapoff -a"
-    command:
-      cmd: "swapoff -a"
-
   become: true

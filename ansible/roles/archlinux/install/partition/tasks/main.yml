@@ -10,6 +10,7 @@
 
   - name: "Delete exising partitions on /dev/{{ install_device }}"
     command: "wipefs --force --quiet --all /dev/{{ install_device }}"
+    when: not vagrant|default(False) == True
 
   - name: "Create boot partition on {{ install_device }}"
     community.general.parted:

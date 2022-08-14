@@ -107,8 +107,7 @@
   - name: "Run grub-install"
     command:
       cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch --target=x86_64-efi"
-    ignore_errors: vagrant|default(False) == True
-    # We get an error in vagrant becaus we use an bios box for the installation
+    ignore_errors: true # We get an error in vagrant becaus we use an bios box for the installation
 
   - name: "Create grub directory"
     file:

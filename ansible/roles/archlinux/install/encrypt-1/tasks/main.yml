@@ -13,6 +13,7 @@
       device: "/dev/disk/by-partlabel/{{ part_label_root }}"
       state: "absent"
       name: "{{ crypt_dev_label }}"
+    when: not vagrant|default(False) == True
 
   - name: "Create LUKS container {{ crypt_dev_label }} for {{ part_label_root }}"
     community.crypto.luks_device:

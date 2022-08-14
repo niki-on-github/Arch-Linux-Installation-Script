@@ -1,0 +1,12 @@
+---
+- block:
+  # root
+
+  - name: "Ensure {{ item }} is not mounted"
+    mount:
+      path: "{{ item }}"
+      state: "unmounted"
+      fstab: /tmp/tmp.fstab
+
+  become: true
+

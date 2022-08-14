@@ -1,2 +1,0 @@
-[archlinux]
-archlinux-01 ansible_host=192.168.2.5 ansible_user=root ansible_connection=ssh ansible_ssh_private_key_file=/home/arch/.ssh/archserver01
