@@ -14,20 +14,13 @@
       state: latest
     when: lspci_vga.stdout.lower().find ('intel') != -1
 
-  - name: 'Install open-source Nvidia driver'
-    package:
-      name:
-        - xf86-video-noveau
-      state: latest
-    when: not use_propietary_video_driver and lspci_vga.stdout.lower().find ('nvidia') != -1
-
   - name: 'Install proprietary Nvidia driver'
     package:
       name:
         - nvidia
         - nvidia-utils
       state: latest
-    when: use_propietary_video_driver and lspci_vga.stdout.lower().find ('nvidia') != -1
+    when: lspci_vga.stdout.lower().find ('nvidia') != -1
 
   - name: 'Install open-source Readon & AMD driver'
     package:

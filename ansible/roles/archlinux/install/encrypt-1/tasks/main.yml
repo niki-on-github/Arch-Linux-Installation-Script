@@ -26,5 +26,5 @@
       pbkdf:
         iteration_count: "{{ luks_pbkdf_iterations }}"
 
-
   become: true
+  when: enable_encryption

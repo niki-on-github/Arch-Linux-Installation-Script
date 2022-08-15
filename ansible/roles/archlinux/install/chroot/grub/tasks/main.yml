@@ -14,6 +14,7 @@
       path: /etc/default/grub
       regexp: '^.*GRUB_ENABLE_CRYPTODISK=.*$'
       line: "GRUB_ENABLE_CRYPTODISK=y"
+    when: enable_encryption
 
   - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
     shell:
@@ -24,11 +25,19 @@
     set_fact:
       root_uuid: "{{ root_uuid_info.stdout }}"
 
-  - name: "Enable grub Cryptodisk"
+  - name: "Set GRUB_CMDLINE_LINUX for cryptdevice"
     lineinfile:
       path: /etc/default/grub
       regexp: '^.*GRUB_CMDLINE_LINUX=.*$'
       line: "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID={{ root_uuid }}:{{ crypt_dev_label }} rootflags=subvol={{ btrfs_sys_subvolume }} cryptkey=rootfs:{{ luks_keyfile }}\""
+    when: enable_encryption
+
+  - name: "Set GRUB_CMDLINE_LINUX"
+    lineinfile:
+      path: /etc/default/grub
+      regexp: '^.*GRUB_CMDLINE_LINUX=.*$'
+      line: "GRUB_CMDLINE_LINUX=\"rootflags=subvol={{ btrfs_sys_subvolume }}\""
+    when: not enable_encryption
 
   - name: "Check for ADM CPU"
     lineinfile:
@@ -103,6 +112,7 @@
     systemd:
       name: 'initramfs-keyfile.path'
       enabled: 'yes'
+    when: enable_encryption
 
   - name: "Run grub-install"
     command:

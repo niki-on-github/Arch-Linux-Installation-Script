@@ -5,16 +5,16 @@ lang: "de_DE.UTF-8"
 keymap: "de-latin1"
 install_path: "/mnt/install"
 arch_label: "arch"
-crypt_dev_label: "system"
 part_label_boot: "boot"
 part_label_root: "root"
 hostname: "archlinux"
 username: "arch"
 grub_locale: "de"
+crypt_dev_label: "system"
 luks_pbkdf_iterations: 500000
+luks_keyfile: "/disk.key"
 hardened_install: true
 enable_ssh_server: true
+enable_encryption: true
 enable_apparmor: true
-use_propietary_video_driver: true
-luks_keyfile: "/disk.key"
-ansible_remote_tmp: "/.ansible" # this must macht assignment in ansible.cfg
+ansible_remote_tmp: "/.ansible"

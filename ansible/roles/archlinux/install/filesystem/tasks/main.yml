@@ -2,6 +2,16 @@
 - block:
   # root
 
+  - name: "Set root_dev = /dev/mapper/{{ crypt_dev_label }}"
+    set_fact:
+      root_dev: "/dev/mapper/{{ crypt_dev_label }}"
+    when: enable_encryption
+
+  - name: "Set root_dev = /dev/disk/by-partlabel/{{ part_label_root }}"
+    set_fact:
+      root_dev: "/dev/disk/by-partlabel/{{ part_label_root }}"
+    when: not enable_encryption
+
   - name: 'Install dosfstools'
     package:
       name:
@@ -34,7 +44,7 @@
   - name: "Create btrfs Filesystem"
     community.general.filesystem:
       fstype: btrfs
-      dev: "/dev/mapper/{{ crypt_dev_label }}"
+      dev: "{{ root_dev }}"
       opts: "-L {{ arch_label }}"
       force: true
 
@@ -119,9 +129,9 @@
     set_fact:
       boot_uuid: "{{ boot_uuid_info.stdout }}"
 
-  - name: "Get /dev/mapper/{{ crypt_dev_label }} UUID"
+  - name: "Get {{ root_dev }} UUID"
     shell:
-      cmd: "blkid /dev/mapper/{{ crypt_dev_label }} -s UUID -o value"
+      cmd: "blkid {{ root_dev }} -s UUID -o value"
     register: root_uuid_info
 
   - name: "Create var root_uuid"

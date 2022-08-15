@@ -33,3 +33,4 @@
       mode: "0000"
 
   become: true
+  when: enable_encryption

@@ -44,7 +44,7 @@
       pacstrap_packages: "{{ pacstrap_base_packages + linux_hardened_packages }}"
     when: hardened_install
 
-  - name: "pacstrap"
+  - name: "pacstrap (this may take some time)"
     shell:
       cmd: "pacstrap {{ install_path }} {{ pacstrap_packages | join(' ') }}"
 
