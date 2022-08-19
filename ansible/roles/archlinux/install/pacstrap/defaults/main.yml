@@ -3,7 +3,6 @@ pacstrap_base_packages:
   - base
   - base-devel
   - btrfs-progs
-  - cmake
   - curl
   - ethtool
   - fzf
@@ -14,6 +13,7 @@ pacstrap_base_packages:
   - mkinitcpio
   - nvme-cli
   - openssh
+  - pciutils
   - python3
   - reflector
   - rsync
