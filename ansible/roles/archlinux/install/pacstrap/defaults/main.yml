@@ -9,6 +9,7 @@ pacstrap_base_packages:
   - fzf
   - git
   - git-lfs
+  - iotop
   - linux-firmware
   - mkinitcpio
   - nvme-cli
