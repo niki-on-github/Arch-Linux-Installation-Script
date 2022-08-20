@@ -32,6 +32,7 @@
       - "{{ install_path }}/var/log"
       - "{{ install_path }}/swap"
       - "{{ install_path }}/opt/docker"
+      - "{{ install_path }}/var/lib/libvirt/images"
       - "{{ install_path }}"
       - "/mnt/btrfs-root"
 
@@ -74,6 +75,7 @@
     - "{{ btrfs_swap_subvolume }}"
     - "{{ btrfs_var_log_subvolume }}"
     - "{{ btrfs_home_subvolume }}"
+    - "{{ btrfs_libvirt_subvolume }}"
     - "{{ btrfs_docker_subvolume }}"
 
   - name: "Mount btrfs subvolume {{ btrfs_sys_subvolume }} to {{ install_path }}"
@@ -105,6 +107,12 @@
     vars:
       mount_path: "{{ install_path }}/home"
       btrfs_subvolume: "{{ btrfs_home_subvolume }}"
+
+  - name: "Mount btrfs subvolume {{ btrfs_libvirt_subvolume }} to {{ install_path }}/var/lib/libvirt/images"
+    include_tasks: mount_btrfs_subvolume.yml
+    vars:
+      mount_path: "{{ install_path }}/var/lib/libvirt/images"
+      btrfs_subvolume: "{{ btrfs_libvirt_subvolume }}"
 
   - name: "Mount btrfs subvolume {{ btrfs_docker_subvolume }} to {{ install_path }}/opt/docker"
     include_tasks: mount_btrfs_subvolume.yml
