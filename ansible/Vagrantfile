@@ -34,6 +34,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :ansible do |ansible|
+    # ansible.galaxy_role_file = 'requirements.yml'
     ansible.verbose = "vv"
     ansible.playbook = "./playbooks/test-setup.yml"
     ansible.limit = "all"
@@ -42,6 +43,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :ansible do |ansible|
+    # ansible.galaxy_role_file = 'requirements.yml'
     ansible.verbose = "vv"
     ansible.playbook = "./playbooks/test-chroot.yml"
     ansible.limit = "all"
