@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: archlinux
 
   vars:
     install_device: "vdb"

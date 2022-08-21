@@ -36,14 +36,16 @@ Vagrant.configure("2") do |config|
   config.vm.provision :ansible do |ansible|
     ansible.verbose = "vv"
     ansible.playbook = "./playbooks/test-setup.yml"
-    ansible.groups = { "vagrant" => ["all"] }
+    ansible.limit = "all"
+    ansible.groups = { "archlinux" => ["default"] }
     ansible.extra_vars = { vagrant: true }
   end
 
   config.vm.provision :ansible do |ansible|
     ansible.verbose = "vv"
     ansible.playbook = "./playbooks/test-chroot.yml"
-    ansible.groups = { "vagrant" => ["all"] }
+    ansible.limit = "all"
+    ansible.groups = { "archlinux" => ["default"] }
     ansible.extra_vars = { ansible_python_interpreter: "/tmp/chroot_wrapper", vagrant: true}
   end
 end
