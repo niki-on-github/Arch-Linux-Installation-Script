@@ -2,6 +2,10 @@
 - block:
   # root
 
+  - name: "Update pacman cache"
+    community.general.pacman:
+      update_cache: yes
+
   - name: 'Install parted'
     package:
       name:

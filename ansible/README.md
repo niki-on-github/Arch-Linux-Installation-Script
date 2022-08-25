@@ -9,5 +9,5 @@ loadkeys de-latin1
 sudo pacman -Sy git
 git -c http.sslVerify=false clone [URL]
 cd [REPO]
-bash install.sh
+bash local-install.sh
 ```
