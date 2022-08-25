@@ -63,6 +63,9 @@ cat >${tmp_dir}/inventory <<EOL
 archlinux-01 ansible_host=${IP} ansible_user=root ansible_connection=ssh ansible_ssh_private_key_file=${tmp_dir}/ansible
 EOL
 
+echo "Installation configuration:"
+cat ./playbooks/group_vars/*
+
 while true; do
     echo -en "\nEnter user password: " && read -s user_passphrase
     echo -en "\nVerify password: " && read -s user_passphrase_verify
