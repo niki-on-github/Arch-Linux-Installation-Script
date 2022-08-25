@@ -16,7 +16,7 @@ Dependecies:
     - ansible
 
 
-Precodndition:
+Precondition:
 
     ```bash
     systemctl start sshd
