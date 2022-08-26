@@ -41,6 +41,9 @@ IP="$1"
 [ "$IP" = "help" ] && usage 0
 [ -z "$(echo "$IP" | awk '/^([0-9]{1,3}[.]){3}([0-9]{1,3})$/{print $1}')" ] && error "Invalid IP"
 
+echo "Ping $IP..."
+ping -c 1 -W 2 $IP >/dev/null || error "Device not found!"
+
 tmp_dir=$(mktemp -d)
 
 close() {
