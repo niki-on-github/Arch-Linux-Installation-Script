@@ -57,7 +57,7 @@ echo "Temp Directory: $tmp_dir"
 ansible-galaxy install -r requirements.yml
 
 ssh-keygen -a 100 -t ed25519 -f ${tmp_dir}/ansible -N "" -C ""
-ssh-copy-id -i ${tmp_dir}/ansible.pub root@${IP}
+ssh-copy-id -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' -i ${tmp_dir}/ansible.pub root@${IP}
 
 cat >${tmp_dir}/inventory <<EOL
 [archlinux]
@@ -78,7 +78,7 @@ while true; do
     fi
 done
 
-ssh root@$IP -i "${tmp_dir}/ansible" 'lsblk'
+ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' root@$IP -i "${tmp_dir}/ansible" 'lsblk'
 
 ansible-playbook \
     -i ${tmp_dir}/inventory \
