@@ -18,11 +18,9 @@ Dependecies:
 
 Precondition:
 
-    ```bash
     systemctl start sshd
     passwd
     ip a
-    ```
 
 Usage:
 
@@ -33,7 +31,7 @@ EOF
 
 error() {
     echo -e "${RED}ERROR: $1${NC}\n"
-    usage -1
+    usage 1
 }
 
 IP="$1"
