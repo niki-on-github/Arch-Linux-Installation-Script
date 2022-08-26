@@ -24,4 +24,9 @@
     command:
       cmd: "locale-gen"
 
+  - name: "Set LOCALE_ARCHIVE in /etc/environment (required for nix)"
+    lineinfile:
+      path: /etc/environment
+      line: "LOCALE_ARCHIVE=/usr/lib/locale/locale-archive"
+
   become: true
