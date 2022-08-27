@@ -1,0 +1,9 @@
+apparmor_grub_cmdline_linux_default:
+  - "lsm=landlock,lockdown,yama,apparmor,bpf"
+  - "audit=1"
+
+intel_iommu_grub_cmdline_linux_default:
+  - "intel_iommu=on"
+
+amd_iommu_grub_cmdline_linux_default:
+  - "intel_iommu=on"
