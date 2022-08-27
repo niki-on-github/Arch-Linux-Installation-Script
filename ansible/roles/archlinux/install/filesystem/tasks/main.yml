@@ -18,24 +18,6 @@
         - dosfstools
       state: latest
 
-  - name: "swapoff -a"
-    command:
-      cmd: "swapoff -a"
-
-  - name: "Ensure partitions are not mounted"
-    include_tasks: unmount.yml
-    with_items:
-      - "{{ install_path }}/.ansible"
-      - "{{ install_path }}/.snapshots"
-      - "{{ install_path }}/boot/efi"
-      - "{{ install_path }}/home"
-      - "{{ install_path }}/var/log"
-      - "{{ install_path }}/swap"
-      - "{{ install_path }}/opt/docker"
-      - "{{ install_path }}/var/lib/libvirt/images"
-      - "{{ install_path }}"
-      - "/mnt/btrfs-root"
-
   - name: "Create vfat Filesystem"
     community.general.filesystem:
       fstype: vfat

@@ -28,7 +28,7 @@
       regexp: '^#MAKEFLAGS=.*$'
       line: 'MAKEFLAGS="-j$(expr $(nproc) + 1)"'
 
-  - name: 'Build paru'
+  - name: 'Build paru (this may take some time)'
     command:
       cmd: "su -c 'cd /home/{{ username }}/.cache/paru/clone/paru && makepkg --noconfirm -f -s && cd -' -s /bin/sh {{ username }}"
 

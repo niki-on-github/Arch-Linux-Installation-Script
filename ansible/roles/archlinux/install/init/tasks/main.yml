@@ -8,4 +8,55 @@
       state: 'directory'
       mode: 0777
 
+  - name: "Update pacman cache"
+    community.general.pacman:
+      update_cache: yes
+
+  - name: 'Update install medium archlinux-keyring'
+    pacman:
+      name: 'archlinux-keyring'
+      state: latest
+      update_cache: yes
+
+  - name: "swapoff -a"
+    command:
+      cmd: "swapoff -a"
+
+  - name: "Ensure partitions are not mounted"
+    include_tasks: unmount.yml
+    with_items:
+      - "{{ install_path }}/.ansible"
+      - "{{ install_path }}/.snapshots"
+      - "{{ install_path }}/boot/efi"
+      - "{{ install_path }}/home"
+      - "{{ install_path }}/var/log"
+      - "{{ install_path }}/swap"
+      - "{{ install_path }}/opt/docker"
+      - "{{ install_path }}/var/lib/libvirt/images"
+      - "{{ install_path }}"
+      - "/mnt/btrfs-root"
+
+  - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} stat"
+    stat:
+      path: /dev/disk/by-partlabel/{{ part_label_root }}
+    register: root_partlabel
+
+  - name: 'Install cryptsetup'
+    package:
+      name:
+        - cryptsetup
+      state: latest
+
+  - name: "Close existing LUKS container {{ crypt_dev_label }}"
+    shell:
+      cmd: "cryptsetup close {{ crypt_dev_label }}"
+    when: root_partlabel.stat.exists
+
+  - name: "Remove LUKS container {{ crypt_dev_label }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_root }}"
+      state: "absent"
+      name: "{{ crypt_dev_label }}"
+    when: not vagrant|default(False) == True and root_partlabel.stat.exists
+
   become: true
