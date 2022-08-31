@@ -51,6 +51,7 @@
     shell:
       cmd: "cryptsetup close {{ crypt_dev_label }}"
     when: root_partlabel.stat.exists
+    ignore_errors: true
 
   - name: "Remove LUKS container {{ crypt_dev_label }}"
     community.crypto.luks_device:
