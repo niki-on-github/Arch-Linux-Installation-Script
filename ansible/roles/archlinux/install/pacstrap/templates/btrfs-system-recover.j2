@@ -21,7 +21,7 @@ trap check SIGHUP SIGINT SIGTERM EXIT
 
 if [ ! -d /tmp/btrfs-recover ]; then
     mkdir -p /tmp/btrfs-recover
-    mount -t btrfs -o subvolid=0 /dev/mapper/{{ crypt_dev_label }} /tmp/btrfs-recover
+    mount -t btrfs -o subvolid=0 {{ root_dev }} /tmp/btrfs-recover
 fi
 
 recover=$(find /tmp/btrfs-recover/{{ btrfs_sys_snapshot_subvolume }} -maxdepth 2 -name "info.xml" | fzf --preview 'cat {}' | sed 's/\/info.xml$//g') || exit 1
