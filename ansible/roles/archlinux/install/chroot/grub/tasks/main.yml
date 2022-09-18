@@ -114,6 +114,21 @@
       enabled: 'yes'
     when: enable_encryption
 
+  - name: "Create /etc/pacman.d/hooks/grub-update.hook"
+    copy:
+      dest: "/etc/pacman.d/hooks/grub-update.hook"
+      content: |
+        [Trigger]
+        Operation = Upgrade
+        Type = Package
+        Target = grub*
+
+        [Action]
+        Description = Update grub ...
+        When = PostTransaction
+        Depends = grub
+        Exec = /bin/sh -c "grub-install --efi-directory=/boot/efi --bootloader-id=arch --target=x86_64-efi; grub-mkconfig -o /boot/grub/grub.cfg"
+
   - name: "Run grub-install"
     command:
       cmd: "grub-install --efi-directory=/boot/efi --bootloader-id=arch --target=x86_64-efi"
