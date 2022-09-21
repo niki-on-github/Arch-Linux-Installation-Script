@@ -95,6 +95,9 @@ print_logo() {
     echo -e '    \e[1;36m/ _.~   ~._^\'
     echo -e '   \e[1;36m/.^         ^.\ \e[0;37mTM'
     echo -e " "
+    echo -e ""
+    echo -e "WARNING: THis install script will not longer be maintained."
+    echo -e "I am using now the ansible playbook in this repository for my setups."
     return 0
 }
 
