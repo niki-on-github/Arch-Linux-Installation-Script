@@ -4,6 +4,8 @@ Ansible playbook for deploying a new Arch Linux System with encrypted disk and b
 
 ## Usage
 
+First adjust the variables in `./playbooks/group_vars/all.yml`.
+
 ### Installation from booted arch install medium
 
 ```bash
