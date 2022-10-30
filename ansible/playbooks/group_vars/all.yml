@@ -18,3 +18,4 @@ enable_ssh_server: true
 enable_encryption: true
 enable_apparmor: true
 ansible_remote_tmp: "/.ansible"
+root_partition_end: "100%"

@@ -33,7 +33,7 @@
       part_type: primary
       state: present
       part_start: 256MiB
-      part_end: 100%
+      part_end: "{{ root_partition_end }}"
 
   become: true
 
