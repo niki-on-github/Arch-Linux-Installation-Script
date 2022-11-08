@@ -5,7 +5,7 @@
   - name: 'Install cryptsetup'
     package:
       name:
-        - openssl
+        # - openssl
         - cryptsetup
       state: latest
     when: ansible_facts['distribution'] != "NixOS"

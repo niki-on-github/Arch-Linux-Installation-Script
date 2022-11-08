@@ -1,3 +1,21 @@
+- name: "Get /dev/disk/by-partlabel/{{ part_label_boot }} UUID"
+  shell:
+    cmd: "blkid /dev/disk/by-partlabel/{{ part_label_boot }} -s UUID -o value"
+  register: boot_uuid_info
+
+- name: "Create var boot_uuid"
+  set_fact:
+    boot_uuid: "{{ boot_uuid_info.stdout }}"
+
+- name: "Get {{ root_dev }} UUID"
+  shell:
+    cmd: "blkid {{ root_dev }} -s UUID -o value"
+  register: root_uuid_info
+
+- name: "Create var root_uuid"
+  set_fact:
+    root_uuid: "{{ root_uuid_info.stdout }}"
+
 - name: "Create NixOS hardware-config"
   template:
     src: hardware-configuration.nix.j2

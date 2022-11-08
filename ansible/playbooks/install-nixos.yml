@@ -18,3 +18,4 @@
     # - role: archlinux/install/encrypt-1
     # - role: archlinux/install/filesystem
     # - role: archlinux/install/encrypt-2
+    - role: nixos/install/config
