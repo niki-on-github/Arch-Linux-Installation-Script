@@ -17,6 +17,7 @@
       name:
         - dosfstools
       state: latest
+    when: ansible_facts['distribution'] != "NixOS"
 
   - name: "Create vfat Filesystem"
     community.general.filesystem:
@@ -29,7 +30,7 @@
     community.general.filesystem:
       fstype: btrfs
       dev: "{{ root_dev }}"
-      opts: "-L {{ arch_label }}"
+      opts: "-L {{ btrfs_root_label }}"
       force: true
 
   - name: "Create mount point for btrfs root volume"
@@ -43,7 +44,7 @@
   - name: "Mount btrfs root volume"
     mount:
       path: "/mnt/btrfs-root"
-      src: "LABEL={{ arch_label }}"
+      src: "LABEL={{ btrfs_root_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }}'
       state: "mounted"
@@ -57,8 +58,10 @@
     - "{{ btrfs_swap_subvolume }}"
     - "{{ btrfs_var_log_subvolume }}"
     - "{{ btrfs_home_subvolume }}"
-    - "{{ btrfs_libvirt_subvolume }}"
-    - "{{ btrfs_docker_subvolume }}"
+
+  - name: "Create additional btrfs subvolumes"
+    command: "btrfs subvolume create \"/mnt/btrfs-root/{{ item.name }}\""
+    loop: "{{ additional_btrfs_subvolumes }}"
 
   - name: "Mount btrfs subvolume {{ btrfs_sys_subvolume }} to {{ install_path }}"
     include_tasks: mount_btrfs_subvolume.yml
@@ -90,17 +93,12 @@
       mount_path: "{{ install_path }}/home"
       btrfs_subvolume: "{{ btrfs_home_subvolume }}"
 
-  - name: "Mount btrfs subvolume {{ btrfs_libvirt_subvolume }} to {{ install_path }}/var/lib/libvirt/images"
+  - name: "Mount additional btrfs subvolumes"
     include_tasks: mount_btrfs_subvolume.yml
     vars:
-      mount_path: "{{ install_path }}/var/lib/libvirt/images"
-      btrfs_subvolume: "{{ btrfs_libvirt_subvolume }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_docker_subvolume }} to {{ install_path }}/opt/docker"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}/opt/docker"
-      btrfs_subvolume: "{{ btrfs_docker_subvolume }}"
+      mount_path: "{{ install_path }}{{ item.path }}"
+      btrfs_subvolume: "{{ item.name }}"
+    loop: "{{additional_btrfs_subvolumes}}"
 
   - name: "Create mount point for {{ install_path }}/boot/efi"
     file:
@@ -150,5 +148,6 @@
       owner: root
       group: root
       mode: 0644
+    when: generate_fstab
 
   become: true

@@ -9,9 +9,6 @@ mount -o remount,size=2G /run/archiso/cowspace
 pacman -Sy --noconfirm --needed ansible python-pip
 ansible-galaxy install -r requirements.yml
 
-echo "Installation configuration:"
-cat ./playbooks/group_vars/*
-
 while true; do
     echo -en "\nEnter user password: " && read -s user_passphrase
     echo -en "\nVerify password: " && read -s user_passphrase_verify

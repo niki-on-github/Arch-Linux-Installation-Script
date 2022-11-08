@@ -9,7 +9,7 @@ usage() {
     cat <<EOF
 Description:
 
-    '`basename $0`' is a script to remote install arch linux via ansible
+    '`basename $0`' is a script to remote install nixos via ansible
 
 Dependecies:
 
@@ -18,6 +18,7 @@ Dependecies:
 
 Precondition:
 
+    nix-env -iA nixos.python310
     systemctl start sshd
     passwd
     ip a
@@ -57,36 +58,18 @@ echo "Temp Directory: $tmp_dir"
 ansible-galaxy install -r requirements.yml
 
 ssh-keygen -a 100 -t ed25519 -f ${tmp_dir}/ansible -N "" -C ""
-ssh-copy-id -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' -i ${tmp_dir}/ansible.pub root@${IP}
+ssh-copy-id -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' -i ${tmp_dir}/ansible.pub nixos@${IP}
 
 cat >${tmp_dir}/inventory <<EOL
-[archlinux]
-archlinux-01 ansible_host=${IP} ansible_user=root ansible_connection=ssh ansible_ssh_private_key_file=${tmp_dir}/ansible
+[nixos]
+nixos-01 ansible_host=${IP} ansible_user=nixos ansible_connection=ssh ansible_ssh_private_key_file=${tmp_dir}/ansible
 EOL
 
-while true; do
-    echo -en "\nEnter user password: " && read -s user_passphrase
-    echo -en "\nVerify password: " && read -s user_passphrase_verify
-
-    if [ "$user_passphrase" == "$user_passphrase_verify" ] && [ -n "$user_passphrase" ]; then
-        break
-    else
-        echo -e "${RED}\nERROR: password does not match${NC}"
-    fi
-done
-
-ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' root@$IP -i "${tmp_dir}/ansible" 'lsblk'
+ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' nixos@$IP -i "${tmp_dir}/ansible" 'lsblk'
 
 ansible-playbook \
     -i ${tmp_dir}/inventory \
-    ./playbooks/install-setup.yml
-
-[ $? -ne 0 ] && error "Installation failed"
-
-ansible-playbook \
-    -i ${tmp_dir}/inventory \
-    -e '{ "ansible_python_interpreter": "/tmp/chroot_wrapper", "user_password": "'$user_passphrase'"}' \
-    ./playbooks/install-chroot.yml
+    ./playbooks/install-nixos.yml
 
 [ $? -ne 0 ] && error "Installation failed"
 

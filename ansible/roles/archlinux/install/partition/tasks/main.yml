@@ -7,6 +7,7 @@
       name:
         - parted
       state: latest
+    when: ansible_facts['distribution'] != "NixOS"
 
   - name: "Delete exising partitions on /dev/{{ install_device }}"
     command: "wipefs --force --quiet --all /dev/{{ install_device }}"

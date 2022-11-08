@@ -1,0 +1,19 @@
+- name: "Create NixOS hardware-config"
+  template:
+    src: hardware-configuration.nix.j2
+    dest: "{{ install_path }}/etc/nixos/hardware-configuration.nix"
+    owner: root
+    group: root
+    mode: 0755
+
+- name: "Create NixOS config"
+  template:
+    src: configuration.nix.j2
+    dest: "{{ install_path }}/etc/nixos/configuration.nix"
+    owner: root
+    group: root
+    mode: 0755
+
+- name: "Install NixOS"
+  cmd: nixos-install
+  chdir: "{{ install_path }}"

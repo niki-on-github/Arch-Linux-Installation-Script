@@ -1,8 +1,16 @@
+generate_fstab: True
+
 btrfs_mount_opts: "defaults,ssd,noatime,compress=lzo"
+
 btrfs_sys_subvolume: "@"
 btrfs_sys_snapshot_subvolume: "@snapshots"
 btrfs_swap_subvolume: "@swap"
 btrfs_home_subvolume: "@home"
 btrfs_var_log_subvolume: "@log"
-btrfs_docker_subvolume: "@docker"
-btrfs_libvirt_subvolume: "@libvirt"
+
+additional_btrfs_subvolumes:
+  - name: "@docker"
+    path: "/opt/docker"
+  - name: "@libvirt"
+    path: "/var/lib/libvirt/images"
+

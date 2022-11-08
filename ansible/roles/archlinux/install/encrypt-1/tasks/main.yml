@@ -5,8 +5,10 @@
   - name: 'Install cryptsetup'
     package:
       name:
+        - openssl
         - cryptsetup
       state: latest
+    when: ansible_facts['distribution'] != "NixOS"
 
   - name: "Create LUKS container {{ crypt_dev_label }} for {{ part_label_root }}"
     community.crypto.luks_device:

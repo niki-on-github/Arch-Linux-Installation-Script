@@ -1,0 +1,20 @@
+---
+- hosts: nixos
+
+  vars_prompt:
+
+    - name: install_device
+      prompt: Specify Install Device (e.g. nvme0n1)
+      private: false
+
+    - name: luks_passphrase
+      prompt: LUKS passphrase
+      private: true
+      confirm: true
+
+  roles:
+    # - role: archlinux/install/efi-check
+    # - role: archlinux/install/partition
+    # - role: archlinux/install/encrypt-1
+    # - role: archlinux/install/filesystem
+    # - role: archlinux/install/encrypt-2

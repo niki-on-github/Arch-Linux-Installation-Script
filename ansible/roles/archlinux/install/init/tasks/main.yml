@@ -31,8 +31,6 @@
       - "{{ install_path }}/home"
       - "{{ install_path }}/var/log"
       - "{{ install_path }}/swap"
-      - "{{ install_path }}/opt/docker"
-      - "{{ install_path }}/var/lib/libvirt/images"
       - "{{ install_path }}"
       - "/mnt/btrfs-root"
 

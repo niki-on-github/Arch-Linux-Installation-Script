@@ -75,7 +75,7 @@
   - name: "Mount btrfs {{ btrfs_sys_snapshot_subvolume }} volume"
     mount:
       path: "/.snapshots"
-      src: "LABEL={{ arch_label }}"
+      src: "LABEL={{ btrfs_root_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_sys_snapshot_subvolume }}'
       state: "mounted"

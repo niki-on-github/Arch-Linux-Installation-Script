@@ -12,4 +12,8 @@
       msg: "Not running in EFI mode"
     when: not efivars.stat.exists
 
+  - name: "Print distribution information"
+    debug:
+      var: ansible_facts['distribution']
+
   become: true

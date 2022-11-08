@@ -1,0 +1,6 @@
+hostname: "nixos"
+username: "nix"
+generate_fstab: False
+additional_btrfs_subvolumes:
+  - name: "@nix"
+    path: "/nix"

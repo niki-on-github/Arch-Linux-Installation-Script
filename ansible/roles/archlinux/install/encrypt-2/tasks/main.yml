@@ -7,6 +7,7 @@
       name:
         - cryptsetup
       state: latest
+    when: ansible_facts['distribution'] != "NixOS"
 
   - name: "Get {{ install_path }}{{ luks_keyfile }} stat"
     stat:
