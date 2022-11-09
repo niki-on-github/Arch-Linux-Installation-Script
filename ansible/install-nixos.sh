@@ -18,7 +18,6 @@ Dependecies:
 
 Precondition:
 
-    nix-env -iA nixos.python310
     systemctl start sshd
     passwd
     ip a
@@ -73,5 +72,8 @@ ansible-playbook \
     ./playbooks/install-nixos.yml
 
 [ $? -ne 0 ] && error "Installation failed"
+
+echo "setting user 'root' password..."
+ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' nixos@$IP -i "${tmp_dir}/ansible" 'sudo nixos-enter --root "/mnt/install" -c "/nix/var/nix/profiles/system/sw/bin/passwd"'
 
 echo -e "${GREEN}OK: Installation completed${NC}"

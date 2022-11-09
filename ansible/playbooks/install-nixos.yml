@@ -13,9 +13,9 @@
       confirm: true
 
   roles:
-    # - role: archlinux/install/efi-check
-    # - role: archlinux/install/partition
-    # - role: archlinux/install/encrypt-1
-    # - role: archlinux/install/filesystem
-    # - role: archlinux/install/encrypt-2
+    - role: archlinux/install/efi-check
+    - role: archlinux/install/partition
+    - role: archlinux/install/encrypt-1
+    - role: archlinux/install/filesystem
+    - role: archlinux/install/encrypt-2
     - role: nixos/install/config

@@ -13,7 +13,7 @@ loadkeys de-latin1  # set keyboard language
 sudo pacman -Sy git
 git -c http.sslVerify=false clone [URL]
 cd [REPO_DIR]
-bash install-local.sh
+bash install-arch-local.sh
 ```
 
 ### Remote Installation
@@ -26,4 +26,4 @@ passwd
 ip a
 ```
 
-On remote computer use `bash install-remote.sh [IP]` to deploy the Arch Linux System.
+On remote computer use `bash install-arch-remote.sh [IP]` to deploy the Arch Linux System.
