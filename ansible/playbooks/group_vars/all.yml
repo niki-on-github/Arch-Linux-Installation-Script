@@ -11,6 +11,5 @@ grub_locale: "de"
 crypt_dev_label: "system"
 luks_pbkdf_iterations: 500000
 luks_keyfile: "/disk.key"
-ansible_remote_tmp: "/.ansible"
 root_partition_end: "100%"
 enable_encryption: true

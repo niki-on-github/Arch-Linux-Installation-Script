@@ -7,31 +7,65 @@
   set_fact:
     boot_uuid: "{{ boot_uuid_info.stdout }}"
 
-- name: "Get {{ root_dev }} UUID"
+- name: "Get /dev/disk/by-partlabel/{{ part_label_root }} UUID"
   shell:
-    cmd: "blkid {{ root_dev }} -s UUID -o value"
-  register: root_uuid_info
+    cmd: "blkid /dev/disk/by-partlabel/{{ part_label_root }} -s UUID -o value"
+  register: crypt_root_uuid_info
 
-- name: "Create var root_uuid"
+- name: "Create var crypt_root_uuid"
   set_fact:
-    root_uuid: "{{ root_uuid_info.stdout }}"
+    crypt_root_uuid: "{{ crypt_root_uuid_info.stdout }}"
 
-- name: "Create NixOS hardware-config"
-  template:
-    src: hardware-configuration.nix.j2
-    dest: "{{ install_path }}/etc/nixos/hardware-configuration.nix"
-    owner: root
-    group: root
-    mode: 0755
+- name: "Get /dev/mapper/{{ crypt_dev_label }} UUID"
+  shell:
+    cmd: "blkid /dev/mapper/{{ crypt_dev_label }} -s UUID -o value"
+  register: btrfs_root_uuid_info
 
-- name: "Create NixOS config"
-  template:
-    src: configuration.nix.j2
-    dest: "{{ install_path }}/etc/nixos/configuration.nix"
-    owner: root
-    group: root
-    mode: 0755
+- name: "Create var btrfs_root_uuid"
+  set_fact:
+    btrfs_root_uuid: "{{ btrfs_root_uuid_info.stdout }}"
 
-- name: "Install NixOS"
-  cmd: nixos-install
-  chdir: "{{ install_path }}"
+- name: "Show crypt_root_uuid"
+  debug:
+    var: crypt_root_uuid
+
+- name: "Show boot_uuid"
+  debug:
+    var: boot_uuid
+
+- name: "Show btrfs_root_uuid"
+  debug:
+    var: btrfs_root_uuid
+
+- block:
+  # superuser
+
+  - name: "Create /etc/nixos"
+    file:
+      path: "{{ install_path }}/etc/nixos"
+      state: 'directory'
+      mode: 0755
+
+  - name: "Create NixOS hardware-config"
+    template:
+      src: hardware-configuration.nix.j2
+      dest: "{{ install_path }}/etc/nixos/hardware-configuration.nix"
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: "Create NixOS config"
+    template:
+      src: configuration.nix.j2
+      dest: "{{ install_path }}/etc/nixos/configuration.nix"
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: "Install NixOS"
+    shell:
+      cmd: nixos-install --root {{ install_path }}
+      chdir: "{{ install_path }}"
+
+  become: true
+

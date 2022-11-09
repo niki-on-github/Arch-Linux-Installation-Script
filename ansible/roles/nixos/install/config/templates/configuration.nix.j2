@@ -11,21 +11,20 @@
     ];
 
   # Bootloader.
-  # boot.loader.systemd-boot.enable = true;
-  # boot.loader.efi.canTouchEfiVariables = true;
-  # boot.loader.efi.efiSysMountPoint = "/boot/efi";
-  boot.loader.grub = {
-    enable = true;
-    version = 2;
-    device = "nodev";
-    efiSupport = true;
-    enableCryptodisk = true;
-  };
-  boot.initrd.luks.devices = {
-      root = {
-        device = "/dev/disk/by-uuid/{{ root_uuid }}";
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  # boot.loader.grub = {
+  #   enable = true;
+  #   version = 2;
+  #   device = "nodev";
+  #   efiSupport = true;
+  #   enableCryptodisk = true;
+  # };
+  boot.initrd.luks.devices.luksroot = {
+        device = "/dev/disk/by-uuid/{{ crypt_root_uuid }}";
         preLVM = true;
-      };
+        allowDiscards = true;
   };
 
   networking.hostName = "nixos"; # Define your hostname.

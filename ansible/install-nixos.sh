@@ -65,6 +65,7 @@ cat >${tmp_dir}/inventory <<EOL
 nixos-01 ansible_host=${IP} ansible_user=nixos ansible_connection=ssh ansible_ssh_private_key_file=${tmp_dir}/ansible
 EOL
 
+ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' nixos@$IP -i "${tmp_dir}/ansible" 'nix-env -iA nixos.python310'
 ssh -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' nixos@$IP -i "${tmp_dir}/ansible" 'lsblk'
 
 ansible-playbook \
