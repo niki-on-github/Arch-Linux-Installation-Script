@@ -37,6 +37,38 @@
   debug:
     var: btrfs_root_uuid
 
+- name: "Check for ADM CPU"
+  lineinfile:
+    path: /proc/cpuinfo
+    regexp: '.*AMD.*'
+    state: absent
+  check_mode: yes
+  register: amd_cpu
+
+- name: "Check for Intel CPU"
+  lineinfile:
+    path: /proc/cpuinfo
+    regexp: '.*Intel.*'
+    state: absent
+  check_mode: yes
+  register: intel_cpu
+
+- name: "Set fact has_amd_cpu"
+  set_fact:
+    has_amd_cpu: "{{ amd_cpu.found }}"
+
+- name: "Set fact has_intel_cpu"
+  set_fact:
+    has_intel_cpu: "{{ intel_cpu.found }}"
+
+- name: "Show has_intel_cpu fact"
+  debug:
+    var: has_intel_cpu
+
+- name: "Show has_amd_cpu fact"
+  debug:
+    var: has_amd_cpu
+
 - block:
   # superuser
 
