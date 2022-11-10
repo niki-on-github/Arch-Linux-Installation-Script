@@ -10,19 +10,19 @@
       ./hardware-configuration.nix
     ];
 
-  networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
-  time.timeZone = "Europe/Berlin";
+  time.timeZone = "{{ timezone }}";
 
-  i18n.defaultLocale = "de_DE.utf8";
+  i18n.defaultLocale = "{{ locale | replace('UTF-8', 'utf8') }}";
 
   services.xserver = {
-    layout = "de";
+    layout = "{{ grub_locale }}";
     xkbVariant = "";
   };
 
-  console.keyMap = "de";
+  console.keyMap = "{{ grub_locale }}";
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.nix = {
