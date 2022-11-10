@@ -78,6 +78,21 @@
       state: 'directory'
       mode: 0755
 
+  - name: "Create /etc/secrets/initrd"
+    file:
+      path: "{{ install_path }}/etc/secrets/initrd"
+      state: 'directory'
+      mode: 0755
+
+  - name: "Copy disk key"
+    copy:
+      src: "{{ install_path }}{{ luks_keyfile }}"
+      dest: "{{ install_path }}/etc/secrets/initrd{{ luks_keyfile }}"
+      owner: root
+      group: root
+      mode: '0000'
+      remote_src: yes
+
   - name: "Create NixOS hardware-config"
     template:
       src: hardware-configuration.nix.j2
