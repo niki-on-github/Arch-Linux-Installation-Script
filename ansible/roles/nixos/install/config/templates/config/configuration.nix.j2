@@ -1,0 +1,54 @@
+{ config, pkgs, ... }:
+
+{
+  networking.hostName = "nixos";
+  networking.networkmanager.enable = true;
+
+  time.timeZone = "{{ timezone }}";
+
+  i18n.defaultLocale = "{{ locale | replace('UTF-8', 'utf8') }}";
+
+  services.xserver = {
+    layout = "{{ grub_locale }}";
+    xkbVariant = "";
+  };
+
+  console.keyMap = "{{ grub_locale }}";
+
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.nix = {
+    isNormalUser = true;
+    description = "nix";
+    extraGroups = [ "networkmanager" "wheel" ];
+    packages = with pkgs; [];
+  };
+
+  nixpkgs.config.allowUnfree = true;
+
+  # List packages installed in system profile.
+  environment.systemPackages = with pkgs; [
+    vim
+    git
+  ];
+
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
+  };
+
+  services.openssh.enable = true;
+  services.openssh.permitRootLogin = "yes";
+
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # networking.firewall.enable = false;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "22.05";
+
+}

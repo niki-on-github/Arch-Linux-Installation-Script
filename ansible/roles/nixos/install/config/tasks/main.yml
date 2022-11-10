@@ -78,6 +78,12 @@
       state: 'directory'
       mode: 0755
 
+  - name: "Create /etc/nixos/config"
+    file:
+      path: "{{ install_path }}/etc/nixos/config"
+      state: 'directory'
+      mode: 0755
+
   - name: "Create /etc/secrets/initrd"
     file:
       path: "{{ install_path }}/etc/secrets/initrd"
@@ -101,10 +107,18 @@
       group: root
       mode: 0755
 
-  - name: "Create NixOS config"
+  - name: "Create NixOS config entrypoint"
     template:
       src: configuration.nix.j2
       dest: "{{ install_path }}/etc/nixos/configuration.nix"
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: "Create NixOS minimal config"
+    template:
+      src: config/configuration.nix.j2
+      dest: "{{ install_path }}/etc/nixos/config/configuration.nix"
       owner: root
       group: root
       mode: 0755
