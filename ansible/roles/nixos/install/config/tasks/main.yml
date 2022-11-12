@@ -17,11 +17,11 @@
 
   - name: "Set fact has_amd_cpu"
     set_fact:
-      has_amd_cpu: "{{ amd_cpu.found }}"
+      has_amd_cpu: "{{ amd_cpu.found > 0 }}"
 
   - name: "Set fact has_intel_cpu"
     set_fact:
-      has_intel_cpu: "{{ intel_cpu.found }}"
+      has_intel_cpu: "{{ intel_cpu.found > 0 }}"
 
   - name: "Show has_intel_cpu fact"
     debug:
