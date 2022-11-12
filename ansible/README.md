@@ -21,7 +21,7 @@ bash install-archlinux-local.sh
 On booted arch install medium run:
 
 ```bash
-systemctl start ssh
+systemctl start sshd
 passwd
 ip a
 ```
