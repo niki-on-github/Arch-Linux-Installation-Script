@@ -4,7 +4,7 @@ Ansible playbook for deploying a new Arch Linux System with encrypted disk and b
 
 ## Usage
 
-First adjust the variables in `./playbooks/group_vars/all.yml`. Then call the install script. You have 2 options. Install arch from booted install medium or use an remote pc to install arch linux.
+First adjust the variables in `./playbooks/group_vars`. Then call the install script. You have 2 options. Install arch from booted install medium or use an remote pc to install arch linux.
 
 ### Installation from booted arch install medium
 

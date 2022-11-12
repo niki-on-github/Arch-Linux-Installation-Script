@@ -19,7 +19,7 @@
   users.users.{{ username }} = {
     isNormalUser = true;
     description = "{{ username }}";
-    extraGroups = [ "networkmanager" "wheel" "sshusers" "audit" "audio" "video" "uucp" "users"];
+    extraGroups = [ "networkmanager" "wheel" "sshusers" "audit" "audio" "video" "uucp" "users" ];
     packages = with pkgs; [];
   };
 
