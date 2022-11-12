@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  networking.hostName = "nixos";
+  networking.hostName = "{{ hostname }}";
   networking.networkmanager.enable = true;
 
   time.timeZone = "{{ timezone }}";
@@ -15,10 +15,10 @@
 
   console.keyMap = "{{ grub_locale }}";
 
-  # Don't forget to set a password with ‘passwd $USERNAME’.
-  users.users.nix = {
+  # Don't forget to set a password with ‘passwd {{ username }}’.
+  users.users.{{ username }} = {
     isNormalUser = true;
-    description = "nix";
+    description = "{{ username }}";
     extraGroups = [ "networkmanager" "wheel" "sshusers" "audit" "audio" "video" "uucp" "users"];
     packages = with pkgs; [];
   };
