@@ -1,6 +1,8 @@
 hostname: "nixos"
 username: "nix"
 generate_fstab: False
+create_data_partition: True
+root_partition_end: "50%"
 additional_btrfs_subvolumes:
   - name: "@nix"
     path: "/nix"

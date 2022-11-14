@@ -31,6 +31,30 @@
     debug:
       var: has_amd_cpu
 
+- block:
+  # superuser
+
+  - name: "Create data partition on {{ install_device }}"
+    community.general.parted:
+      device: "/dev/{{ install_device }}"
+      name: "data"
+      label: gpt
+      number: 3
+      part_type: primary
+      state: present
+      part_start: "{{ root_partition_end }}"
+      part_end: "100%"
+
+  # longhorn reuires a ext4 filesystem (btrfs is currently not supported)
+  # for now we test with unencrypted data partition
+  - name: "Create ext4 Filesystem"
+    community.general.filesystem:
+      fstype: ext4
+      dev: "/dev/disk/by-partlabel/data"
+      force: true
+
+  become: true
+  when: create_data_partition
 
 - block:
   # superuser

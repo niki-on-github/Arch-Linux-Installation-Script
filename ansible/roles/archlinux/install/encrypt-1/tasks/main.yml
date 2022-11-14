@@ -5,10 +5,16 @@
   - name: 'Install cryptsetup'
     package:
       name:
-        # - openssl
         - cryptsetup
       state: latest
     when: ansible_facts['distribution'] != "NixOS"
+
+  - name: "Ensure to recreate LUKS container {{ crypt_dev_label }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_root }}"
+      state: "absent"
+      name: "{{ crypt_dev_label }}"
+    ignore_errors: true
 
   - name: "Create LUKS container {{ crypt_dev_label }} for {{ part_label_root }}"
     community.crypto.luks_device:

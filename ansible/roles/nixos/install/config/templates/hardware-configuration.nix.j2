@@ -65,6 +65,13 @@
       fsType = "vfat";
     };
 
+{% if create_data_partition %}
+  fileSystems."/data" =
+    { device = "/dev/disk/by-partlabel/data";
+      fsType = "ext4";
+    };
+{% endif %}
+
   swapDevices = [ ];
 
   networking.useDHCP = lib.mkDefault true;
