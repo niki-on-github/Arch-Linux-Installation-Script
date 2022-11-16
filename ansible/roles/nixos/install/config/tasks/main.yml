@@ -84,23 +84,26 @@
 - block:
   # superuser
 
-  - name: "Create /etc/nixos"
+  - name: "Create nix directories"
     file:
+      path: "{{ item }}"
+      state: 'directory'
+      mode: 0755
+    with_items:
+      - "{{ install_path }}/nix/persistent"
+      - "{{ install_path }}/nix/persistent/etc"
+      - "{{ install_path }}/nix/persistent/etc/nixos"
+      - "{{ install_path }}/etc"
+      - "{{ install_path }}/etc/nixos"
+
+  - name: "Bind mount /nix/persistent/etc/nixos -> /etc/nixos"
+    mount:
       path: "{{ install_path }}/etc/nixos"
-      state: 'directory'
-      mode: 0755
-
-  - name: "Create /etc/nixos/config"
-    file:
-      path: "{{ install_path }}/etc/nixos/config"
-      state: 'directory'
-      mode: 0755
-
-  - name: "Create /etc/secrets/initrd"
-    file:
-      path: "{{ install_path }}/etc/secrets/initrd"
-      state: 'directory'
-      mode: 0755
+      src: "{{ install_path }}/nix/persistent/etc/nixos"
+      fstype: none
+      opts: 'bind'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
 
   - name: "Create NixOS hardware-config"
     template:
@@ -110,7 +113,7 @@
       group: root
       mode: 0755
 
-  - name: "Create NixOS config entrypoint"
+  - name: "Create NixOS minimal config"
     template:
       src: configuration.nix.j2
       dest: "{{ install_path }}/etc/nixos/configuration.nix"
@@ -118,17 +121,9 @@
       group: root
       mode: 0755
 
-  - name: "Create NixOS minimal config"
-    template:
-      src: config/configuration.nix.j2
-      dest: "{{ install_path }}/etc/nixos/config/configuration.nix"
-      owner: root
-      group: root
-      mode: 0755
-
   - name: "Install NixOS"
     shell:
-      cmd: nixos-install --root {{ install_path }}
+      cmd: nixos-install --no-root-passwd --root {{ install_path }}
       chdir: "{{ install_path }}"
 
   become: true

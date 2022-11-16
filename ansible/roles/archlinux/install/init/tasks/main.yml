@@ -53,6 +53,7 @@
     shell:
       cmd: ls /dev/mapper | grep -v control
     register: luks_containers
+    failed_when: false
 
   - name: "Show open luks containers"
     debug:
