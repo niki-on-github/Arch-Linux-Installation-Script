@@ -45,6 +45,13 @@
       part_start: "{{ root_partition_end }}"
       part_end: "100%"
 
+  - name: "Ensure to recreate LUKS container {{ crypt_label_data }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_data }}"
+      state: "absent"
+      name: "{{ crypt_label_data }}"
+    ignore_errors: true
+
   - name: "Create LUKS container {{ crypt_label_data }} for {{ part_label_data }}"
     community.crypto.luks_device:
       device: "/dev/disk/by-partlabel/{{ part_label_data }}"
