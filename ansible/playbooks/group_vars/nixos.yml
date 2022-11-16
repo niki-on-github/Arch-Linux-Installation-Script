@@ -12,3 +12,5 @@ btrfs_subvolumes:
     path: "/nix"
   - name: "@home"
     path: "/home"
+  - name: "@opt"
+    path: "/opt"
