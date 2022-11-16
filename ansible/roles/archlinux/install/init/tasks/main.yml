@@ -22,17 +22,15 @@
     command:
       cmd: "swapoff -a"
 
+  - name: "Get btrfs mounts"
+    shell:
+      cmd: mount | grep btrfs | awk '{print $3}' | awk '{ print length(), $3 | "sort -n -r" }' | awk '{print $2}'
+    register: mounts
+
   - name: "Ensure partitions are not mounted"
     include_tasks: unmount.yml
     with_items:
-      - "{{ install_path }}/.ansible"
-      - "{{ install_path }}/.snapshots"
-      - "{{ install_path }}/boot/efi"
-      - "{{ install_path }}/home"
-      - "{{ install_path }}/var/log"
-      - "{{ install_path }}/swap"
-      - "{{ install_path }}"
-      - "/mnt/btrfs-root"
+      - "{{mounts.stdout_lines}}"
 
   - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} stat"
     stat:

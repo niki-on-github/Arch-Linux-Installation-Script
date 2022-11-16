@@ -35,7 +35,7 @@
 
   - name: "Create mount point for btrfs root volume"
     file:
-      path: '/mnt/btrfs-root'
+      path: '{{ tmp_btrfs_root_mount_path }}'
       state: 'directory'
       owner: '0'
       group: '0'
@@ -43,7 +43,7 @@
 
   - name: "Mount btrfs root volume"
     mount:
-      path: "/mnt/btrfs-root"
+      path: "{{ tmp_btrfs_root_mount_path }}"
       src: "LABEL={{ btrfs_root_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }}'
@@ -51,54 +51,15 @@
       fstab: /tmp/tmp.fstab
 
   - name: "Create btrfs subvolumes"
-    command: "btrfs subvolume create \"/mnt/btrfs-root/{{ item }}\""
-    with_items:
-    - "{{ btrfs_sys_subvolume }}"
-    - "{{ btrfs_sys_snapshot_subvolume }}"
-    - "{{ btrfs_swap_subvolume }}"
-    - "{{ btrfs_var_log_subvolume }}"
-    - "{{ btrfs_home_subvolume }}"
+    command: "btrfs subvolume create \"{{ tmp_btrfs_root_mount_path }}/{{ item.name }}\""
+    loop: "{{ btrfs_subvolumes }}"
 
-  - name: "Create additional btrfs subvolumes"
-    command: "btrfs subvolume create \"/mnt/btrfs-root/{{ item.name }}\""
-    loop: "{{ additional_btrfs_subvolumes }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_sys_subvolume }} to {{ install_path }}"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}"
-      btrfs_subvolume: "{{ btrfs_sys_subvolume }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_sys_snapshot_subvolume }} to {{ install_path }}/.snapshots"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}/.snapshots"
-      btrfs_subvolume: "{{ btrfs_sys_snapshot_subvolume }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_var_log_subvolume }} to {{ install_path }}/var/log"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}/var/log"
-      btrfs_subvolume: "{{ btrfs_var_log_subvolume }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_swap_subvolume }} to {{ install_path }}/swap"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}/swap"
-      btrfs_subvolume: "{{ btrfs_swap_subvolume }}"
-
-  - name: "Mount btrfs subvolume {{ btrfs_home_subvolume }} to {{ install_path }}/home"
-    include_tasks: mount_btrfs_subvolume.yml
-    vars:
-      mount_path: "{{ install_path }}/home"
-      btrfs_subvolume: "{{ btrfs_home_subvolume }}"
-
-  - name: "Mount additional btrfs subvolumes"
+  - name: "Mount btrfs subvolumes"
     include_tasks: mount_btrfs_subvolume.yml
     vars:
       mount_path: "{{ install_path }}{{ item.path }}"
       btrfs_subvolume: "{{ item.name }}"
-    loop: "{{additional_btrfs_subvolumes}}"
+    loop: "{{btrfs_subvolumes}}"
 
   - name: "Create mount point for {{ install_path }}/boot/efi"
     file:
@@ -128,11 +89,11 @@
   - name: "Get {{ root_dev }} UUID"
     shell:
       cmd: "blkid {{ root_dev }} -s UUID -o value"
-    register: root_uuid_info
+    register: btrfs_root_uuid_info
 
-  - name: "Create var root_uuid"
+  - name: "Create var btrfs_root_uuid"
     set_fact:
-      root_uuid: "{{ root_uuid_info.stdout }}"
+      btrfs_root_uuid: "{{ btrfs_root_uuid_info.stdout }}"
 
   - name: "Create /etc"
     file:

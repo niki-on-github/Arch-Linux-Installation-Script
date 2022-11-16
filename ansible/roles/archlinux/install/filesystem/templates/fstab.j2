@@ -1,11 +1,6 @@
 # <uuid> <path> <fs> <options> <0> <order>
-UUID={{ root_uuid }} / btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_sys_subvolume }} 0 0
-UUID={{ root_uuid }} /var/log btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_var_log_subvolume }} 0 2
-UUID={{ root_uuid }} /home btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_home_subvolume }} 0 2
-UUID={{ root_uuid }} /.snapshots btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_sys_snapshot_subvolume }} 0 2
-UUID={{ root_uuid }} /swap btrfs {{ btrfs_mount_opts }},subvol={{ btrfs_swap_subvolume }} 0 2
 {% for item in additional_btrfs_subvolumes %}
-UUID={{ root_uuid }} {{ item.path }} {{ btrfs_mount_opts }},subvol={{ item.name }} 0 2
+UUID={{ btrfs_root_uuid }} {{ item.path }} {{ btrfs_mount_opts }},subvol={{ item.name }} 0 2
 {% endfor %}
 UUID={{ boot_uuid }} /boot/efi vfat defaults 0 2
 /swap/swapfile none swap defaults 0 3

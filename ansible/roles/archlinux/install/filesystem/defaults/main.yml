@@ -1,14 +1,17 @@
 generate_fstab: True
-
+tmp_btrfs_root_mount_path: "/tmp/btrfs-root"
 btrfs_mount_opts: "defaults,ssd,noatime,compress=zstd"
-
-btrfs_sys_subvolume: "@"
-btrfs_sys_snapshot_subvolume: "@snapshots"
-btrfs_swap_subvolume: "@swap"
-btrfs_home_subvolume: "@home"
-btrfs_var_log_subvolume: "@log"
-
-additional_btrfs_subvolumes:
+btrfs_subvolumes:
+  - name: "@"
+    path: "/"
+  - name: "@snapshots"
+    path: "/.snapshots"
+  - name: "@swap"
+    path: "/swap"
+  - name: "@home"
+    path: "/home"
+  - name: "@log"
+    path: "/var/log"
   - name: "@docker"
     path: "/opt/docker"
   - name: "@libvirt"
