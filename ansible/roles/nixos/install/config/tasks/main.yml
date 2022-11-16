@@ -54,7 +54,7 @@
       force: true
 
   become: true
-  when: create_data_partition
+  when: create_ext4_data_partition
 
 - block:
   # superuser
@@ -80,7 +80,7 @@
   - name: "Copy disk key"
     copy:
       src: "{{ install_path }}{{ luks_keyfile }}"
-      dest: "{{ install_path }}/etc/secrets/initrd{{ luks_keyfile }}"
+      dest: "{{ install_path }}/etc/secrets/initrd/{{ luks_keyfile | basename }}"
       owner: root
       group: root
       mode: '0000'

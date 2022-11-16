@@ -19,6 +19,7 @@
   users.users.{{ username }} = {
     isNormalUser = true;
     description = "{{ username }}";
+    initialPassword = "nixos";
     extraGroups = [ "networkmanager" "wheel" "sshusers" "audit" "audio" "video" "uucp" "users" ];
     packages = with pkgs; [];
   };
@@ -40,7 +41,7 @@
   };
 
   services.openssh.enable = true;
-  services.openssh.permitRootLogin = "yes";
+  services.openssh.permitRootLogin = "no";
 
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];

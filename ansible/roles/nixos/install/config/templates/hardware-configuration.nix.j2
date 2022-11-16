@@ -27,49 +27,38 @@
     luks.devices.{{ crypt_dev_label }} = {
         device = "/dev/disk/by-partlabel/{{ part_label_root }}";
         preLVM = true;
-        keyFile = "{{ luks_keyfile }}";
+        keyFile = "{{ '/' + luks_keyfile.split('/')[-1] }}";
         allowDiscards = true;
     };
     secrets = {
-        "{{ luks_keyfile[1:] }}" = "/etc/secrets/initrd{{ luks_keyfile }}";
+        "{{ luks_keyfile.split('/')[-1] }}" = "/etc/secrets/initrd/{{ luks_keyfile.split('/')[-1] }}";
     };
   };
 
-  fileSystems."/" =
-    { device = "/dev/mapper/{{ crypt_dev_label }}";
-      fsType = "btrfs";
-      options = [ "subvol=@" "compress=zstd" "noatime" ];
-    };
+  fileSystems."/" = {
+    device = "none";
+    fsType = "tmpfs";
+    options = [ "defaults" "size=2G" "mode=755" ];
+  };
 
-  fileSystems."/home" =
-    { device = "/dev/mapper/{{ crypt_dev_label }}";
-      fsType = "btrfs";
-      options = [ "subvol=@home" "compress=zstd" "noatime" ];
-    };
+{% for item in btrfs_subvolumes %}
+  fileSystems."/home" = {
+    device = "/dev/mapper/{{ crypt_dev_label }}";
+    fsType = "btrfs";
+    options = [ "subvol=@home" "compress=zstd" "noatime" ];
+  };
+{% endfor %}
 
-  fileSystems."/nix" =
-    { device = "/dev/mapper/{{ crypt_dev_label }}";
-      fsType = "btrfs";
-      options = [ "subvol=@nix" "compress=zstd" "noatime" ];
-    };
+  fileSystems."/boot/efi" = {
+    device = "/dev/disk/by-partlabel/{{ part_label_boot }}";
+    fsType = "vfat";
+  };
 
-  fileSystems."/var/log" =
-    { device = "/dev/mapper/{{ crypt_dev_label }}";
-      fsType = "btrfs";
-      options = [ "subvol=@log" "compress=zstd" "noatime" ];
-      neededForBoot = true;
-    };
-
-  fileSystems."/boot/efi" =
-    { device = "/dev/disk/by-partlabel/{{ part_label_boot }}";
-      fsType = "vfat";
-    };
-
-{% if create_data_partition %}
-  fileSystems."/data" =
-    { device = "/dev/disk/by-partlabel/data";
-      fsType = "ext4";
-    };
+{% if create_ext4_data_partition %}
+  fileSystems."/data" = {
+    device = "/dev/disk/by-partlabel/data";
+    fsType = "ext4";
+  };
 {% endif %}
 
   swapDevices = [ ];

@@ -54,6 +54,16 @@
     command: "btrfs subvolume create \"{{ tmp_btrfs_root_mount_path }}/{{ item.name }}\""
     loop: "{{ btrfs_subvolumes }}"
 
+  - name: "Mount tmpfs root volume"
+    mount:
+      path: "{{ install_path }}"
+      src: "tmpfs"
+      fstype: 'tmpfs'
+      opts: 'defaults,size=2G,mode=755'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
+    when: tmpfs_root
+
   - name: "Mount btrfs subvolumes"
     include_tasks: mount_btrfs_subvolume.yml
     vars:

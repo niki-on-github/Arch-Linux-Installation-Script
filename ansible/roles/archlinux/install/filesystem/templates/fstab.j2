@@ -1,5 +1,5 @@
 # <uuid> <path> <fs> <options> <0> <order>
-{% for item in additional_btrfs_subvolumes %}
+{% for item in btrfs_subvolumes %}
 UUID={{ btrfs_root_uuid }} {{ item.path }} {{ btrfs_mount_opts }},subvol={{ item.name }} 0 2
 {% endfor %}
 UUID={{ boot_uuid }} /boot/efi vfat defaults 0 2

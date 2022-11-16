@@ -1,8 +1,14 @@
 hostname: "nixos"
 username: "nix"
 generate_fstab: False
-create_data_partition: True
+tmpfs_root: True
+create_ext4_data_partition: True
 root_partition_end: "50%"
-additional_btrfs_subvolumes:
+luks_keyfile: "/boot/disk.key"
+btrfs_subvolumes:
+  - name: "@boot"
+    path: "/boot"
   - name: "@nix"
     path: "/nix"
+  - name: "@home"
+    path: "/home"
