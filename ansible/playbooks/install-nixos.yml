@@ -14,6 +14,7 @@
 
   roles:
     - role: archlinux/install/efi-check
+    - role: archlinux/install/init
     - role: archlinux/install/partition
     - role: archlinux/install/encrypt-1
     - role: archlinux/install/filesystem

@@ -18,47 +18,50 @@
       state: latest
       update_cache: yes
 
-  - name: "swapoff -a"
-    command:
-      cmd: "swapoff -a"
-
-  - name: "Get btrfs mounts"
-    shell:
-      cmd: mount | grep btrfs | awk '{print $3}' | awk '{ print length(), $3 | "sort -n -r" }' | awk '{print $2}'
-    register: mounts
-
-  - name: "Ensure partitions are not mounted"
-    include_tasks: unmount.yml
-    with_items:
-      - "{{ install_path }}/boot/efi"
-
-  - name: "Ensure partitions are not mounted"
-    include_tasks: unmount.yml
-    with_items:
-      - "{{ mounts.stdout_lines }}"
-
-  - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} stat"
-    stat:
-      path: /dev/disk/by-partlabel/{{ part_label_root }}
-    register: root_partlabel
-
   - name: 'Install cryptsetup'
     package:
       name:
         - cryptsetup
       state: latest
 
-  - name: "Close existing LUKS container {{ crypt_label_sys }}"
-    shell:
-      cmd: "cryptsetup close {{ crypt_label_sys }}"
-    when: root_partlabel.stat.exists
-    ignore_errors: true
+  - name: "swapoff -a"
+    command:
+      cmd: "swapoff -a"
 
-  - name: "Remove LUKS container {{ crypt_label_sys }}"
-    community.crypto.luks_device:
-      device: "/dev/disk/by-partlabel/{{ part_label_root }}"
-      state: "absent"
-      name: "{{ crypt_label_sys }}"
-    when: root_partlabel.stat.exists
+  become: true
+  when: ansible_facts['distribution'] != "NixOS"
+
+
+- block:
+  # root
+
+  - name: "Get previous install mounts"
+    shell:
+      cmd: mount | grep -E "(btrfs|{{ install_path }})" | awk '{print $3}' | awk '{ print length(), $0 | "sort -n -r" }' | awk '{print $2}'
+    register: mounts
+
+  - name: "Show already mounted partitions"
+    debug:
+      msg: "{{ mounts.stdout_lines }}"
+
+  - name: "Ensure partitions are not mounted"
+    include_tasks: unmount.yml
+    with_items:
+      - "{{ mounts.stdout_lines }}"
+
+  - name: "Get luks containers"
+    shell:
+      cmd: ls /dev/mapper | grep -v control
+    register: luks_containers
+
+  - name: "Show open luks containers"
+    debug:
+      msg: "{{ luks_containers.stdout_lines }}"
+
+  - name: "Close existing LUKS containers"
+    shell:
+      cmd: "cryptsetup close {{ item }}"
+    with_items:
+      - "{{ luks_containers.stdout_lines }}"
 
   become: true

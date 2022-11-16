@@ -75,7 +75,7 @@
     community.general.filesystem:
       fstype: ext4
       dev: "/dev/mapper/{{ crypt_label_data }}"
-      opts: "-L {{ ext4_data_label }}"
+      opts: "-L {{ ext4_label_data }}"
       force: true
 
   become: true
