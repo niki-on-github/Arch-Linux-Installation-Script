@@ -93,6 +93,7 @@
       - "{{ install_path }}/nix/persistent"
       - "{{ install_path }}/nix/persistent/etc"
       - "{{ install_path }}/nix/persistent/etc/nixos"
+      - "{{ install_path }}/nix/persistent/etc/ssh"
       - "{{ install_path }}/etc"
       - "{{ install_path }}/etc/nixos"
 

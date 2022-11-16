@@ -29,6 +29,9 @@
     packages = with pkgs; [];
   };
 
+  # Don't allow mutation of users outside of the config.
+  users.mutableUsers = false;
+
   nixpkgs.config.allowUnfree = true;
 
   # List packages installed in system profile.
@@ -39,6 +42,17 @@
       cryptography
     ]))
   ];
+
+  environment.etc."machine-id".source
+    = "/nix/persistent/etc/machine-id";
+  environment.etc."ssh/ssh_host_rsa_key".source
+    = "/nix/persistent/etc/ssh/ssh_host_rsa_key";
+  environment.etc."ssh/ssh_host_rsa_key.pub".source
+    = "/nix/persistent/etc/ssh/ssh_host_rsa_key.pub";
+  environment.etc."ssh/ssh_host_ed25519_key".source
+    = "/nix/persistent/etc/ssh/ssh_host_ed25519_key";
+  environment.etc."ssh/ssh_host_ed25519_key.pub".source
+    = "/nix/persistent/etc/ssh/ssh_host_ed25519_key.pub";
 
   programs.gnupg.agent = {
     enable = true;
