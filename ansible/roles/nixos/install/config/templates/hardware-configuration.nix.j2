@@ -31,7 +31,7 @@
         allowDiscards = true;
     };
     secrets = {
-        "{{ luks_keyfile.split('/')[-1] }}" = "/etc/secrets/initrd/{{ luks_keyfile.split('/')[-1] }}";
+        "{{ luks_keyfile.split('/')[-1] }}" = "{{ luks_keyfile }}";
     };
   };
 
