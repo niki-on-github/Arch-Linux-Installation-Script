@@ -35,11 +35,13 @@
     };
   };
 
+{% if tmpfs_root %}
   fileSystems."/" = {
     device = "none";
     fsType = "tmpfs";
     options = [ "defaults" "size=2G" "mode=755" ];
   };
+{% endif %}
 
 {% for item in btrfs_subvolumes %}
   fileSystems."{{ item.path }}" = {

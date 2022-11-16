@@ -30,7 +30,12 @@
   - name: "Ensure partitions are not mounted"
     include_tasks: unmount.yml
     with_items:
-      - "{{mounts.stdout_lines}}"
+      - "{{ install_path }}/boot/efi"
+
+  - name: "Ensure partitions are not mounted"
+    include_tasks: unmount.yml
+    with_items:
+      - "{{ mounts.stdout_lines }}"
 
   - name: "Get /dev/disk/by-partlabel/{{ part_label_root }} stat"
     stat:
