@@ -48,17 +48,17 @@
         - cryptsetup
       state: latest
 
-  - name: "Close existing LUKS container {{ crypt_dev_label }}"
+  - name: "Close existing LUKS container {{ crypt_label_sys }}"
     shell:
-      cmd: "cryptsetup close {{ crypt_dev_label }}"
+      cmd: "cryptsetup close {{ crypt_label_sys }}"
     when: root_partlabel.stat.exists
     ignore_errors: true
 
-  - name: "Remove LUKS container {{ crypt_dev_label }}"
+  - name: "Remove LUKS container {{ crypt_label_sys }}"
     community.crypto.luks_device:
       device: "/dev/disk/by-partlabel/{{ part_label_root }}"
       state: "absent"
-      name: "{{ crypt_dev_label }}"
+      name: "{{ crypt_label_sys }}"
     when: root_partlabel.stat.exists
 
   become: true

@@ -37,7 +37,7 @@
   - name: "Create data partition on {{ install_device }}"
     community.general.parted:
       device: "/dev/{{ install_device }}"
-      name: "data"
+      name: "{{ part_label_data }}"
       label: gpt
       number: 3
       part_type: primary
@@ -45,12 +45,30 @@
       part_start: "{{ root_partition_end }}"
       part_end: "100%"
 
+  - name: "Create LUKS container {{ crypt_label_data }} for {{ part_label_data }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_data }}"
+      state: "opened"
+      name: "{{ crypt_label_data }}"
+      passphrase: "{{ luks_passphrase }}"
+      hash: "sha512"
+      type: luks1
+      pbkdf:
+        iteration_count: "{{ luks_pbkdf_iterations }}"
+
+  - name: "Add Keyfile to LUKS container {{ crypt_label_data }}"
+    community.crypto.luks_device:
+      device: "/dev/disk/by-partlabel/{{ part_label_data }}"
+      state: "opened"
+      passphrase: "{{ luks_passphrase }}"
+      new_keyfile: "{{ install_path}}{{ luks_keyfile }}"
+
   # longhorn reuires a ext4 filesystem (btrfs is currently not supported)
-  # for now we test with unencrypted data partition
   - name: "Create ext4 Filesystem"
     community.general.filesystem:
       fstype: ext4
-      dev: "/dev/disk/by-partlabel/data"
+      dev: "/dev/mapper/{{ crypt_label_data }}"
+      opts: "-L {{ ext4_data_label }}"
       force: true
 
   become: true

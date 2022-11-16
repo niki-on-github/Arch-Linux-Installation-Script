@@ -24,7 +24,7 @@
   };
 
   boot.initrd = {
-    luks.devices.{{ crypt_dev_label }} = {
+    luks.devices.{{ crypt_label_sys }} = {
         device = "/dev/disk/by-partlabel/{{ part_label_root }}";
         preLVM = true;
         keyFile = "{{ '/' + luks_keyfile.split('/')[-1] }}";
@@ -45,7 +45,7 @@
 
 {% for item in btrfs_subvolumes %}
   fileSystems."{{ item.path }}" = {
-    device = "/dev/mapper/{{ crypt_dev_label }}";
+    device = "/dev/mapper/{{ crypt_label_sys }}";
     fsType = "btrfs";
     options = [ "subvol={{ item.name }}" "compress=zstd" "noatime" ];
   };
@@ -58,8 +58,14 @@
 
 {% if create_ext4_data_partition %}
   fileSystems."/data" = {
-    device = "/dev/disk/by-partlabel/data";
+    device = "/dev/mapper/{{ crypt_label_data }}";
     fsType = "ext4";
+    encrypted = {
+        enable = true;
+        label = "{{ crypt_label_data }}";
+        blkDev = "/dev/disk/by-partlabel/{{ part_label_data }}";
+        keyFile = "{{ luks_keyfile }}";
+      };
   };
 {% endif %}
 

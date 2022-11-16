@@ -2,9 +2,9 @@
 - block:
   # root
 
-  - name: "Set root_dev = /dev/mapper/{{ crypt_dev_label }}"
+  - name: "Set root_dev = /dev/mapper/{{ crypt_label_sys }}"
     set_fact:
-      root_dev: "/dev/mapper/{{ crypt_dev_label }}"
+      root_dev: "/dev/mapper/{{ crypt_label_sys }}"
     when: enable_encryption
 
   - name: "Set root_dev = /dev/disk/by-partlabel/{{ part_label_root }}"

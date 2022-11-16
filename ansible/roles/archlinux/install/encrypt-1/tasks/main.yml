@@ -9,18 +9,18 @@
       state: latest
     when: ansible_facts['distribution'] != "NixOS"
 
-  - name: "Ensure to recreate LUKS container {{ crypt_dev_label }}"
+  - name: "Ensure to recreate LUKS container {{ crypt_label_sys }}"
     community.crypto.luks_device:
       device: "/dev/disk/by-partlabel/{{ part_label_root }}"
       state: "absent"
-      name: "{{ crypt_dev_label }}"
+      name: "{{ crypt_label_sys }}"
     ignore_errors: true
 
-  - name: "Create LUKS container {{ crypt_dev_label }} for {{ part_label_root }}"
+  - name: "Create LUKS container {{ crypt_label_sys }} for {{ part_label_root }}"
     community.crypto.luks_device:
       device: "/dev/disk/by-partlabel/{{ part_label_root }}"
       state: "opened"
-      name: "{{ crypt_dev_label }}"
+      name: "{{ crypt_label_sys }}"
       passphrase: "{{ luks_passphrase }}"
       hash: "sha512"
       type: luks1

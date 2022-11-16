@@ -4,11 +4,11 @@ mirror: "Germany"
 lang: "de_DE.UTF-8"
 keymap: "de-latin1"
 install_path: "/mnt/install"
-btrfs_root_label: "linux"
+btrfs_label_root: "linux"
 part_label_boot: "boot"
 part_label_root: "root"
 grub_locale: "de"
-crypt_dev_label: "system"
+crypt_label_sys: "system"
 luks_pbkdf_iterations: 500000
 luks_keyfile: "/disk.key"
 enable_encryption: true

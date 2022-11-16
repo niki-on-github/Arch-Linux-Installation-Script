@@ -11,7 +11,7 @@
   - name: "Mount btrfs {{ btrfs_subvolume }} volume"
     mount:
       path: "{{ mount_path }}"
-      src: "LABEL={{ btrfs_root_label }}"
+      src: "LABEL={{ btrfs_label_root }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvolume }}'
       state: "mounted"

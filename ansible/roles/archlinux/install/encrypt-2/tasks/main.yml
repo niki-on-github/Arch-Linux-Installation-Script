@@ -19,7 +19,7 @@
       cmd: "dd bs=512 count=8 if=/dev/random of={{ install_path }}{{ luks_keyfile }} iflag=fullblock"
     when: not keyfile.stat.exists
 
-  - name: "Add Keyfile to LUKS container {{ crypt_dev_label }}"
+  - name: "Add Keyfile to LUKS container {{ crypt_label_sys }}"
     community.crypto.luks_device:
       device: "/dev/disk/by-partlabel/{{ part_label_root }}"
       state: "opened"

@@ -29,7 +29,7 @@
     lineinfile:
       path: /etc/default/grub
       regexp: '^.*GRUB_CMDLINE_LINUX=.*$'
-      line: "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID={{ root_uuid }}:{{ crypt_dev_label }} rootflags=subvol={{ btrfs_sys_subvolume }} cryptkey=rootfs:{{ luks_keyfile }}\""
+      line: "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID={{ root_uuid }}:{{ crypt_label_sys }} rootflags=subvol={{ btrfs_sys_subvolume }} cryptkey=rootfs:{{ luks_keyfile }}\""
     when: enable_encryption
 
   - name: "Set GRUB_CMDLINE_LINUX"
