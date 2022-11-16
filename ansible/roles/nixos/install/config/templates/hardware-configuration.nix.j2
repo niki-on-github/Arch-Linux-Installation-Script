@@ -42,10 +42,10 @@
   };
 
 {% for item in btrfs_subvolumes %}
-  fileSystems."/home" = {
+  fileSystems."{{ item.path }}" = {
     device = "/dev/mapper/{{ crypt_dev_label }}";
     fsType = "btrfs";
-    options = [ "subvol=@home" "compress=zstd" "noatime" ];
+    options = [ "subvol={{ item.name }}" "compress=zstd" "noatime" ];
   };
 {% endfor %}
 
