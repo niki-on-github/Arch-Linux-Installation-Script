@@ -20,7 +20,6 @@
 
   console.keyMap = "{{ grub_locale }}";
 
-  # Don't forget to set a password with ‘passwd {{ username }}’.
   users.users.{{ username }} = {
     isNormalUser = true;
     description = "{{ username }}";
@@ -28,9 +27,6 @@
     extraGroups = [ "networkmanager" "wheel" "sshusers" "audit" "audio" "video" "uucp" "users" ];
     packages = with pkgs; [];
   };
-
-  # Don't allow mutation of users outside of the config.
-  users.mutableUsers = false;
 
   nixpkgs.config.allowUnfree = true;
 
@@ -43,6 +39,10 @@
     ]))
   ];
 
+{% if tmpfs_root %}
+  # Don't allow mutation of users outside of the config.
+  users.mutableUsers = false;
+
   environment.etc."machine-id".source
     = "/nix/persistent/etc/machine-id";
   environment.etc."ssh/ssh_host_rsa_key".source
@@ -53,6 +53,7 @@
     = "/nix/persistent/etc/ssh/ssh_host_ed25519_key";
   environment.etc."ssh/ssh_host_ed25519_key.pub".source
     = "/nix/persistent/etc/ssh/ssh_host_ed25519_key.pub";
+{% endif %}
 
   programs.gnupg.agent = {
     enable = true;
@@ -61,10 +62,6 @@
 
   services.openssh.enable = true;
   services.openssh.permitRootLogin = "no";
-
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # networking.firewall.enable = false;
 
   system.stateVersion = "22.05";
 }

@@ -31,8 +31,10 @@
     debug:
       var: has_amd_cpu
 
+
 - block:
   # superuser
+  # when: create_ext4_data_partition
 
   - name: "Create data partition on {{ install_device }}"
     community.general.parted:
@@ -81,10 +83,12 @@
   become: true
   when: create_ext4_data_partition
 
+
 - block:
   # superuser
+  # when: tmpfs_root
 
-  - name: "Create nix directories"
+  - name: "Create tmpfs NixOS directories"
     file:
       path: "{{ item }}"
       state: 'directory'
@@ -105,6 +109,22 @@
       opts: 'bind'
       state: "mounted"
       fstab: /tmp/tmp.fstab
+
+  become: true
+  when: tmpfs_root
+
+
+- block:
+  # superuser
+
+  - name: "Create NixOS directories"
+    file:
+      path: "{{ item }}"
+      state: 'directory'
+      mode: 0755
+    with_items:
+      - "{{ install_path }}/etc"
+      - "{{ install_path }}/etc/nixos"
 
   - name: "Create NixOS hardware-config"
     template:
