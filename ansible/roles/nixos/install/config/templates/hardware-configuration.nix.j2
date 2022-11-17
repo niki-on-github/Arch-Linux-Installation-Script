@@ -56,10 +56,12 @@
     fsType = "vfat";
   };
 
+{% if tmpfs_root %}
   fileSystems."/etc/nixos" = {
       device = "/nix/persistent/etc/nixos";
       options = [ "bind" ];
   };
+{% endif %}
 
 {% if create_ext4_data_partition %}
   fileSystems."/data" = {
