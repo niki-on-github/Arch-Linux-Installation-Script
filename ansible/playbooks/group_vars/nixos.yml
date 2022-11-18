@@ -2,8 +2,10 @@ hostname: "nixos"
 username: "nix"
 generate_fstab: False
 tmpfs_root: False
-create_ext4_data_partition: True
-root_partition_end: "50%"
+# create_ext4_data_partition: True
+# root_partition_end: "50%"
+create_ext4_data_partition: False
+root_partition_end: "100%"
 luks_keyfile: "/boot/disk.key"
 btrfs_subvolumes:
   - name: "@"

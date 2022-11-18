@@ -5,7 +5,7 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "nvme" "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" "sdhci_pci" "aesni_intel" "cryptd" ];
+  boot.initrd.availableKernelModules = [ "nvme" "ahci" "xhci_pci" "usbhid" "usb_storage" "virtio_pci" "sr_mod" "virtio_blk" "sd_mod" "sdhci_pci" "aesni_intel" "cryptd" ];
   boot.initrd.kernelModules = [ ];
 {% if has_intel_cpu %}
   boot.kernelModules = [ "kvm-intel" ];
@@ -22,6 +22,9 @@
     efiSupport = true;
     enableCryptodisk = true;
   };
+  boot.kernelParams = [
+    "boot.shell_on_fail"
+  ];
 
   boot.initrd = {
     luks.devices.{{ crypt_label_sys }} = {
@@ -49,6 +52,7 @@
     fsType = "btrfs";
     options = [ "subvol={{ item.name }}" "compress=zstd" "noatime" ];
   };
+
 {% endfor %}
 
   fileSystems."/boot/efi" = {
