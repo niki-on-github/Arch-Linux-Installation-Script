@@ -18,6 +18,8 @@ btrfs_subvolumes:
     path: "/opt"
   - name: "@log"
     path: "/var/log"
+  - name: "@swap"
+    path: "/swap"
 
 # tmpfs root:
 # btrfs_subvolumes:
