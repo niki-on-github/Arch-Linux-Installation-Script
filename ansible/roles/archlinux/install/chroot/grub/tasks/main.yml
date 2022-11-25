@@ -114,6 +114,14 @@
       enabled: 'yes'
     when: enable_encryption
 
+  - name: "Create /etc/pacman.d/hooks directory"
+    file:
+      path: '/etc/pacman.d/hooks'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0755'
+
   - name: "Create /etc/pacman.d/hooks/grub-update.hook"
     copy:
       dest: "/etc/pacman.d/hooks/grub-update.hook"

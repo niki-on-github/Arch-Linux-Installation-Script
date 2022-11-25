@@ -37,8 +37,9 @@
 
   - name: "Get previous install mounts"
     shell:
-      cmd: mount | grep -E "(btrfs|{{ install_path }})" | awk '{print $3}' | awk '{ print length(), $0 | "sort -n -r" }' | awk '{print $2}'
+      cmd: mount | grep -E "(btrfs|{{ install_path }})" | awk '{print $3}' | awk '{ print length(), $0 | "sort -n -r" }' | awk '{print $2}' | grep -v '^/$'
     register: mounts
+    failed_when: false
 
   - name: "Show already mounted partitions"
     debug:

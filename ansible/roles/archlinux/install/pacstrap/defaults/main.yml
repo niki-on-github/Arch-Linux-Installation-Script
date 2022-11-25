@@ -1,0 +1,2 @@
+btrfs_sys_subvolume: "@"
+btrfs_sys_snapshot_subvolume: "@snapshots"

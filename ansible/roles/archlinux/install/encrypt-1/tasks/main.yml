@@ -15,6 +15,7 @@
       state: "absent"
       name: "{{ crypt_label_sys }}"
     ignore_errors: true
+    failed_when: false
 
   - name: "Create LUKS container {{ crypt_label_sys }} for {{ part_label_root }}"
     community.crypto.luks_device:
