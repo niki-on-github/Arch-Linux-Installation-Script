@@ -53,6 +53,7 @@
       state: "absent"
       name: "{{ crypt_label_data }}"
     ignore_errors: true
+    when: enable_encryption
 
   - name: "Create LUKS container {{ crypt_label_data }} for {{ part_label_data }}"
     community.crypto.luks_device:
@@ -64,6 +65,7 @@
       type: luks1
       pbkdf:
         iteration_count: "{{ luks_pbkdf_iterations }}"
+    when: enable_encryption
 
   - name: "Add Keyfile to LUKS container {{ crypt_label_data }}"
     community.crypto.luks_device:
@@ -71,6 +73,7 @@
       state: "opened"
       passphrase: "{{ luks_passphrase }}"
       new_keyfile: "{{ install_path}}{{ luks_keyfile }}"
+    when: enable_encryption
 
   # longhorn reuires a ext4 filesystem (btrfs is currently not supported)
   - name: "Create ext4 Filesystem"
@@ -79,6 +82,15 @@
       dev: "/dev/mapper/{{ crypt_label_data }}"
       opts: "-L {{ ext4_label_data }}"
       force: true
+    when: enable_encryption
+
+  - name: "Create ext4 Filesystem"
+    community.general.filesystem:
+      fstype: ext4
+      dev: "/dev/{{ install_device }}3"
+      opts: "-L {{ ext4_label_data }}"
+      force: true
+    when: not enable_encryption
 
   become: true
   when: create_ext4_data_partition
@@ -126,13 +138,29 @@
       - "{{ install_path }}/etc"
       - "{{ install_path }}/etc/nixos"
 
-  - name: "Create NixOS hardware-config"
+  become: true
+
+
+- block:
+  # superuser
+
+  - name: "Create NixOS hardware-config for normal setup"
     template:
-      src: hardware-configuration.nix.j2
+      src: encrypted/hardware-configuration.nix.j2
       dest: "{{ install_path }}/etc/nixos/hardware-configuration.nix"
       owner: root
       group: root
       mode: 0755
+    when: not enable_encryption
+
+  - name: "Create NixOS hardware-config for encrypted setup"
+    template:
+      src: hardware-configuration.encrypted.nix.j2
+      dest: "{{ install_path }}/etc/nixos/hardware-configuration.nix"
+      owner: root
+      group: root
+      mode: 0755
+    when: enable_encryption
 
   - name: "Create NixOS minimal config"
     template:
@@ -141,6 +169,12 @@
       owner: root
       group: root
       mode: 0755
+
+  become: true
+
+
+- block:
+  # superuser
 
   - name: "Install NixOS"
     shell:

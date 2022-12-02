@@ -20,11 +20,23 @@
     version = 2;
     device = "nodev";
     efiSupport = true;
-    enableCryptodisk = false;
+    enableCryptodisk = true;
   };
   boot.kernelParams = [
     "boot.shell_on_fail"
   ];
+
+  boot.initrd = {
+    luks.devices.{{ crypt_label_sys }} = {
+        device = "/dev/disk/by-partlabel/{{ part_label_root }}";
+        preLVM = true;
+        keyFile = "{{ '/' + luks_keyfile.split('/')[-1] }}";
+        allowDiscards = true;
+    };
+    secrets = {
+        "{{ luks_keyfile.split('/')[-1] }}" = "{{ luks_keyfile }}";
+    };
+  };
 
 {% if tmpfs_root %}
   fileSystems."/" = {
@@ -36,7 +48,7 @@
 
 {% for item in btrfs_subvolumes %}
   fileSystems."{{ item.path }}" = {
-    device = "/dev/disk/by-partlabel/{{ part_label_root }}";
+    device = "/dev/mapper/{{ crypt_label_sys }}";
     fsType = "btrfs";
     options = [ "subvol={{ item.name }}" "compress=zstd" "noatime" ];
   };
@@ -57,8 +69,14 @@
 
 {% if create_ext4_data_partition %}
   fileSystems."/data" = {
-    device = "/dev/disk/by-partlabel/{{ part_label_data }}";
+    device = "/dev/mapper/{{ crypt_label_data }}";
     fsType = "ext4";
+    encrypted = {
+        enable = true;
+        label = "{{ crypt_label_data }}";
+        blkDev = "/dev/disk/by-partlabel/{{ part_label_data }}";
+        keyFile = "{{ '/' + luks_keyfile.split('/')[-1] }}";
+      };
   };
 {% endif %}
 
