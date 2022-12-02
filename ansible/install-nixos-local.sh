@@ -7,6 +7,7 @@ NC='\033[0m'
 
 
 lsblk
+echo "loading ..."
 nix-shell -p ansible --run "ansible-playbook -i ./inventory/localhost ./playbooks/install-nixos.yml"
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Installation failed${NC}"
