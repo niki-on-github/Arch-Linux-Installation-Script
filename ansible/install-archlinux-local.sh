@@ -21,13 +21,13 @@ while true; do
 done
 
 lsblk
-ansible-playbook -i ./inventory/localhost ./playbooks/install-setup.yml
+ansible-playbook -i ./inventory/localhost-archlinux ./playbooks/install-setup.yml
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Installation failed${NC}"
     exit 1
 fi
 
-ansible-playbook -i ./inventory/localhost -e '{ "ansible_python_interpreter": "/tmp/chroot_wrapper", "user_password": "'$user_passphrase'"}' ./playbooks/install-chroot.yml
+ansible-playbook -i ./inventory/localhost-archlinux -e '{ "ansible_python_interpreter": "/tmp/chroot_wrapper", "user_password": "'$user_passphrase'"}' ./playbooks/install-chroot.yml
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Installation failed${NC}"
     exit 1
