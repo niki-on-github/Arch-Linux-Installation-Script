@@ -27,3 +27,9 @@ ip a
 ```
 
 On remote computer use `bash install-archlinux-remote.sh [IP]` to deploy the Arch Linux System.
+
+## NixOS
+
+### Notes
+
+Get git on install medium with: `nix-shell -p git`. Then clone repo with `git -c http.sslVerify=false clone [URL]`.
