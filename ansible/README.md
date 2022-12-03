@@ -6,7 +6,7 @@ Ansible and NixOS playbook for deploying a new Arch Linux / NixOS System with en
 
 First adjust the variables in `./playbooks/group_vars`. Then call the install script. You have 2 options. Install arch from booted install medium or use an remote pc to install arch linux.
 
-#### Installation from booted arch install medium
+### Installation from booted arch install medium
 
 ```bash
 loadkeys de-latin1  # set keyboard language
@@ -16,7 +16,7 @@ cd [REPO_DIR]
 bash install-archlinux-local.sh
 ```
 
-#### Remote Installation
+### Remote Installation
 
 On booted arch install medium run:
 
@@ -32,7 +32,7 @@ On remote computer use `bash install-archlinux-remote.sh [IP]` to deploy the Arc
 
 First adjust the variables in `./playbooks/group_vars`. Then call the install script. You have 2 options. Install arch from booted install medium or use an remote pc to install NixOS.
 
-#### Installation from booted NixOS install medium
+### Installation from booted NixOS install medium
 
 1. Get git on install medium with: `nix-shell -p git`
 2. Clone repo with `git -c http.sslVerify=false clone [URL]`
