@@ -8,7 +8,7 @@
       private: false
 
     - name: luks_passphrase
-      prompt: LUKS passphrase
+      prompt: LUKS passphrase (empty string disable encryption)
       private: true
       confirm: true
 

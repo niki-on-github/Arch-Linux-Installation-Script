@@ -8,13 +8,13 @@
       private: false
 
     - name: luks_passphrase
-      prompt: LUKS passphrase
+      prompt: LUKS passphrase (empty string disable encryption)
       private: true
       confirm: true
 
   roles:
-    - role: archlinux/install/efi-check
     - role: archlinux/install/init
+    - role: archlinux/install/efi-check
     - role: archlinux/install/partition
     - role: archlinux/install/encrypt-1
     - role: archlinux/install/filesystem

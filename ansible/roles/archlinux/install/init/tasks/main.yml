@@ -1,4 +1,16 @@
 ---
+
+- block:
+
+  - name: "Set fact enable_encryption"
+    set_fact:
+      enable_encryption: "{{ luks_passphrase | length > 0 }}"
+
+  - name: "Show enable_encryption fact"
+    debug:
+      var: enable_encryption
+
+
 - block:
   # root
 
