@@ -1,6 +1,6 @@
 # Ansible Arch & NixOS Install Playbooks
 
-Ansible and NixOS playbook for deploying a new Arch Linux / NixOS System with encrypted disk and btrfs filesystem suitable for a server and desktop base installation.
+Ansible and NixOS playbook for deploying a new `Arch Linux` / `NixOS` System with encrypted disk and btrfs filesystem suitable for a server and desktop base installation.
 
 ## Arch Linux
 
@@ -30,7 +30,7 @@ On remote computer use `bash install-archlinux-remote.sh [IP]` to deploy the Arc
 
 ## NixOS
 
-First adjust the variables in `./playbooks/group_vars`. Then call the install script. You have 2 options. Install arch from booted install medium or use an remote pc to install NixOS.
+First adjust the variables in `./playbooks/group_vars`. Then call the install script. You have 2 options. Install NixOS from booted install medium or use an remote pc to install NixOS.
 
 ### Installation from booted NixOS install medium
 
@@ -48,3 +48,9 @@ ip a
 ```
 
 On remote computer use `bash install-nixos-remote.sh [IP]` to deploy the NixOS System.
+
+### Next Steps
+
+The playbook is mainly used to set up the partition layout and the encrypted luks containers. Everything else is managed by the nix files. To get a bootable system, a minimal configuration in `/etc/nixos` is created.
+
+The next step would be to load his nixos flakes configuration from a git repository, adjust the hardware config and build the nixos system.
