@@ -32,4 +32,4 @@ On remote computer use `bash install-archlinux-remote.sh [IP]` to deploy the Arc
 
 ### Notes
 
-Get git on install medium with: `nix-shell -p git`. Then clone repo with `git -c http.sslVerify=false clone [URL]`.
+Get git on install medium with: `nix-shell -p git`. Then clone repo with `git -c http.sslVerify=false clone [URL]` or use the remote installer script.
