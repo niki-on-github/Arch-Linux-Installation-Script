@@ -53,4 +53,4 @@ On remote computer use `bash install-nixos-remote.sh [IP]` to deploy the NixOS S
 
 The playbook is mainly used to set up the partition layout and the encrypted luks containers. Everything else is managed by the nix files. To get a bootable system, a minimal configuration in `/etc/nixos` is created.
 
-The next step would be to load his nixos flakes configuration from a git repository, adjust the hardware config and build the nixos system.
+The next step would be to load a nixos flakes configuration from personal git repository, adjust the hardware config and build the nixos system.
