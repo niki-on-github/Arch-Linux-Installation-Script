@@ -1,6 +1,6 @@
 # Ansible Arch & NixOS Install Playbooks
 
-Ansible and NixOS playbook for deploying a new `Arch Linux` / `NixOS` System with encrypted disk and btrfs filesystem suitable for a server and desktop base installation.
+Ansible playbooks to deploying a new `Arch Linux` / `NixOS` System with encrypted disk and btrfs filesystem suitable for a server and desktop base installation.
 
 ## Arch Linux
 
