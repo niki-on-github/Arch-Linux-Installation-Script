@@ -14,6 +14,7 @@
     shell:
       cmd: cryptsetup erase -q /dev/{{ install_device }}2
     ignore_errors: true
+    failed_when: false
 
   - name: "Delete exising partitions on /dev/{{ install_device }}"
     command: "wipefs --force --quiet --all /dev/{{ install_device }}"
