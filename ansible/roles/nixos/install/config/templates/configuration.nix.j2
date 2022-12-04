@@ -34,7 +34,7 @@
   environment.systemPackages = with pkgs; [
     vim
     git
-    (python39.withPackages (p: with p; [
+    (python3.withPackages (p: with p; [
       cryptography
     ]))
   ];
