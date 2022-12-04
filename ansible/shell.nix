@@ -2,7 +2,7 @@
   pkgs.mkShell {
     nativeBuildInputs = with pkgs; [
       ansible
-      (python39.withPackages (p: with p; [
+      (python3.withPackages (p: with p; [
         cryptography
       ]))
     ];
