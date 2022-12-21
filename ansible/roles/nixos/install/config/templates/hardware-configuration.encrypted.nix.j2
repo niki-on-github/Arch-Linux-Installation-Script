@@ -5,8 +5,12 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "nvme" "ahci" "xhci_pci" "usbhid" "usb_storage" "virtio_pci" "sr_mod" "virtio_blk" "sd_mod" "sdhci_pci" "aesni_intel" "cryptd" ];
+  boot.initrd.availableKernelModules = [ "nvme" "ahci" "xhci_pci" "usbhid" "usb_storage" "virtio_pci" "mptspi" "sr_mod" "virtio_blk" "sd_mod" "sdhci_pci" "aesni_intel" "cryptd" ];
   boot.initrd.kernelModules = [ ];
+
+  # vmware user must use the module blow:
+  # boot.initrd.kernelModules = [ "vmw_pvscsi" ];
+
 {% if has_intel_cpu %}
   boot.kernelModules = [ "kvm-intel" ];
 {% elif has_amd_cpu %}
