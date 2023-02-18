@@ -101,7 +101,7 @@
     when: enable_encryption
 
   # longhorn reuires a ext4 filesystem (btrfs is currently not supported)
-  - name: "Create ext4 Filesystem"
+  - name: "Create ext4 Filesystem on encrypted disk"
     community.general.filesystem:
       fstype: ext4
       dev: "/dev/mapper/{{ crypt_label_data }}"

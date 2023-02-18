@@ -14,7 +14,7 @@
 
   pre_tasks:
     - pause:
-        prompt: "Specify Data Device (e.g. nvme0n2)"
+        prompt: "Specify Data Device (e.g. nvme0n2): "
       register: prompt
       no_log: yes
       run_once: yes
@@ -25,6 +25,18 @@
       no_log: yes
       run_once: yes
       when: create_ext4_data_partition
+
+    - set_fact:
+        root_partition_end: "50%"
+      no_log: yes
+      run_once: yes
+      when: create_ext4_data_partition and data_device == install_device
+
+    - set_fact:
+        root_partition_end: "100%"
+      no_log: yes
+      run_once: yes
+      when: not create_ext4_data_partition or data_device != install_device
 
   roles:
     - role: archlinux/install/init
