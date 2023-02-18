@@ -46,6 +46,31 @@
       state: present
       part_start: "{{ root_partition_end }}"
       part_end: "100%"
+    when: install_device == data_device
+
+  - block:
+
+    - name: "Ensure to delete existing luks container from previous setup"
+      shell:
+        cmd: cryptsetup erase -q /dev/{{ data_device }}1
+      ignore_errors: true
+      failed_when: false
+
+    - name: "Delete exising partitions on /dev/{{ data_device }}"
+      command: "wipefs --force --quiet --all /dev/{{ data_device }}"
+
+    - name: "Create data partition on {{ data_device }}"
+      community.general.parted:
+        device: "/dev/{{ data_device }}"
+        name: "{{ part_label_data }}"
+        label: gpt
+        number: 1
+        part_type: primary
+        state: present
+        part_start: 1MiB
+        part_end: "100%"
+
+    when: install_device != data_device
 
   - name: "Ensure to recreate LUKS container {{ crypt_label_data }}"
     community.crypto.luks_device:

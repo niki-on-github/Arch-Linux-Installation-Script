@@ -11,14 +11,9 @@ Description:
 
     '`basename $0`' is a script to remote install nixos via ansible
 
-Dependecies:
-
-    - ansible
-
 
 Precondition:
 
-    systemctl start sshd
     passwd
     ip a
 
@@ -31,7 +26,7 @@ EOF
 
 error() {
     echo -e "${RED}ERROR: $1${NC}\n"
-    usage 1
+    exit 1
 }
 
 IP="$1"
@@ -55,6 +50,8 @@ echo "Remote IP: $IP"
 echo "Temp Directory: $tmp_dir"
 
 ansible-galaxy install -r requirements.yml
+
+set -e
 
 ssh-keygen -a 100 -t ed25519 -f ${tmp_dir}/ansible -N "" -C ""
 ssh-copy-id -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking=no' -i ${tmp_dir}/ansible.pub nixos@${IP}

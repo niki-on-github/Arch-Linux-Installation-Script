@@ -12,6 +12,20 @@
       private: true
       confirm: true
 
+  pre_tasks:
+    - pause:
+        prompt: "Specify Data Device (e.g. nvme0n2)"
+      register: prompt
+      no_log: yes
+      run_once: yes
+      when: create_ext4_data_partition
+
+    - set_fact:
+        data_device: "{{prompt.user_input}}"
+      no_log: yes
+      run_once: yes
+      when: create_ext4_data_partition
+
   roles:
     - role: archlinux/install/init
     - role: archlinux/install/efi-check
