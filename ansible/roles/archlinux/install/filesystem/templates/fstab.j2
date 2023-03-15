@@ -1,6 +1,6 @@
 # <uuid> <path> <fs> <options> <0> <order>
 {% for item in btrfs_subvolumes %}
-UUID={{ btrfs_root_uuid }} {{ item.path }} {{ btrfs_mount_opts }},subvol={{ item.name }} 0 2
+UUID={{ btrfs_root_uuid }} {{ item.path }} btrfs {{ btrfs_mount_opts }},subvol={{ item.name }} 0 2
 {% endfor %}
 UUID={{ boot_uuid }} /boot/efi vfat defaults 0 2
 /swap/swapfile none swap defaults 0 3
