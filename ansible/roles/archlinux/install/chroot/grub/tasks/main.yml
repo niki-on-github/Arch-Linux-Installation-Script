@@ -76,9 +76,9 @@
       regexp: '^.*GRUB_CMDLINE_LINUX_DEFAULT=.*$'
       line: "GRUB_CMDLINE_LINUX_DEFAULT=\"{{ grub_cmdline_linux_default | join(' ') }}\""
 
-  - name: 'Enable grub-btrfs.path'
+  - name: 'Enable grub-btrfsd.service'
     systemd:
-      name: 'grub-btrfs.path'
+      name: 'grub-btrfsd.service'
       enabled: 'yes'
 
   # Initramfs permissions are set to 644 by default, all users will be able to dump the keyfile!
