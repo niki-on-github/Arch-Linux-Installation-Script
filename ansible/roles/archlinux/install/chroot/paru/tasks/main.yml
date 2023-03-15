@@ -9,17 +9,22 @@
         - rustup
       state: latest
 
-  - name: 'rustup install stable for {{ username }} user'
-    command:
-      cmd: "su -c 'rustup install stable' -s /bin/sh {{ username }}"
+  # - name: 'rustup install stable for {{ username }} user'
+  #   command:
+  #     cmd: "su -c 'rustup install stable' -s /bin/sh {{ username }}"
 
-  - name: 'rustup set stable as default for {{ username }} user'
-    command:
-      cmd: "su -c 'rustup default stable' -s /bin/sh {{ username }}"
+  # - name: 'rustup set stable as default for {{ username }} user'
+  #   command:
+  #     cmd: "su -c 'rustup default stable' -s /bin/sh {{ username }}"
 
-  - name: 'clone https://aur.archlinux.org/paru.git'
+  # - name: 'clone https://aur.archlinux.org/paru.git'
+  #   command:
+  #     cmd: "su -c 'git clone https://aur.archlinux.org/paru.git /home/{{ username }}/.cache/paru/clone/paru' -s /bin/sh {{ username }}"
+  #   ignore_errors: true
+
+  - name: 'clone https://aur.archlinux.org/paru-bin.git'
     command:
-      cmd: "su -c 'git clone https://aur.archlinux.org/paru.git /home/{{ username }}/.cache/paru/clone/paru' -s /bin/sh {{ username }}"
+      cmd: "su -c 'git clone https://aur.archlinux.org/paru-bin.git /home/{{ username }}/.cache/paru/clone/paru' -s /bin/sh {{ username }}"
     ignore_errors: true
 
   - name: "Set system MAKEFLAGS"
