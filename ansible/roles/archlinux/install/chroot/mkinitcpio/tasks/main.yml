@@ -18,7 +18,7 @@
     ansible.builtin.lineinfile:
       path: /etc/mkinitcpio.conf
       regexp: '^MODULES='
-      line: "MODULES=( crc32c vfio_pci vfio vfio_iommu_type1 vfio_virqfd )"
+      line: "MODULES=( crc32c vfio_pci vfio vfio_iommu_type1 )"
 
   - name: "Set /etc/mkinitcpio.conf FILES"
     ansible.builtin.lineinfile:
