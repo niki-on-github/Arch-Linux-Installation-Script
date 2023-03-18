@@ -15,7 +15,6 @@ fi
 check() {
     [ "$?" -eq "0" ] || echo "Error: Recovery failed"
     [ -d /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}/boot ] || echo "Warning: System is not bootable anymore"
-    rm -d /tmp/btrfs-recover 2>/dev/null
 }
 trap check SIGHUP SIGINT SIGTERM EXIT
 
@@ -32,7 +31,7 @@ if [ ! -d $recover/snapshot ]; then
     exit 1
 fi
 
-echo "process system recover ... (may take several seconds)"
+echo "process system recover ... (may take several minutes)"
 rm -rf /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}/{*,.*} >/dev/null 2>&1 || echo "clear bad btrfs system root"  # return always true
 btrfs subvolume set-default /tmp/btrfs-recover
 [ ! -e /tmp/btrfs-recover/{{ btrfs_sys_subvolume }} ] || btrfs subvolume delete /tmp/btrfs-recover/{{ btrfs_sys_subvolume }}
