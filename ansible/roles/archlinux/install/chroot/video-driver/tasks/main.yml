@@ -29,7 +29,7 @@
         - opencl-mesa
         - opencl-headers
         - libclc
-        - mdvlk
+        - amdvlk
       state: latest
     when: lspci_vga.stdout.lower().find ('radeon') != -1 or lspci_vga.stdout.lower().find ('amd') != -1
 
