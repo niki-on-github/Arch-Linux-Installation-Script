@@ -11,6 +11,7 @@
       name:
         - mesa
         - xf86-video-intel
+        - vulkan-intel
       state: latest
     when: lspci_vga.stdout.lower().find ('intel') != -1
 
