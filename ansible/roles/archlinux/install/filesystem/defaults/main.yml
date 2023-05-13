@@ -17,4 +17,6 @@ btrfs_subvolumes:
     path: "/opt/docker"
   - name: "@libvirt"
     path: "/var/lib/libvirt/images"
+  - name: "@nix"
+    path: "/nix"
 
