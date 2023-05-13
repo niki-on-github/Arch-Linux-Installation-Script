@@ -24,6 +24,7 @@ btrfs_subvolumes:
   - name: "@swap"
     path: "/swap"
 
+# I do not recommend root on tmpfs unless you have several hundret of GB RAM!
 # tmpfs root:
 # btrfs_subvolumes:
 #   - name: "@boot"
