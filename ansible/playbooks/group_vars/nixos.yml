@@ -2,7 +2,7 @@ hostname: "nixos"
 username: "nix"
 generate_fstab: False
 
-# I need ext partition for lorngorn
+# I need ext4 partition for lorngorn
 create_ext4_data_partition: True
 
 luks_keyfile: "/boot/disk.key"
