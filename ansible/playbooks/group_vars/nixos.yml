@@ -1,8 +1,6 @@
 hostname: "nixos"
 username: "nix"
 generate_fstab: False
-tmpfs_root: False
-
 create_ext4_data_partition: True
 
 luks_keyfile: "/boot/disk.key"
@@ -21,6 +19,7 @@ btrfs_subvolumes:
     path: "/swap"
 
 # I do not recommend root on tmpfs unless you have several hundret of GB RAM!
+tmpfs_root: False
 # tmpfs root:
 # btrfs_subvolumes:
 #   - name: "@boot"
