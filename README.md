@@ -1,4 +1,7 @@
-# Arch Linux and NixOS installer
+# My Arch Linux installer
+
+> [!IMPORTANT]  
+> I switched to NixOS for all my devices. Therefore this repository is not longer used.
 
 **This is not a universal installation script**. It is my Arch Linux and NixOS installation script for a system suitable for everyday use. I make it public available because other public repositories helped me a lot when I switched to Arch Linux. I hope this repository helps you too. If you want to install an Arch Linux reproducibly on a system I recommend to create a personal installation script like this one.
 
